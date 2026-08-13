@@ -1,0 +1,39 @@
+<Window
+    x:Class="WallpaperScheduler.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:tb="using:H.NotifyIcon"
+    xmlns:views="using:WallpaperScheduler.Views"
+    mc:Ignorable="d"
+    Title="Wallpaper Schedule">
+
+    <Grid>
+        <tb:TaskbarIcon
+            x:Name="TrayIcon"
+            ToolTipText="Wallpaper Schedule"
+            IconSource="ms-appx:///Assets/AppIcon.ico">
+            <tb:TaskbarIcon.ContextFlyout>
+                <MenuFlyout>
+                    <MenuFlyoutItem Text="Open Wallpaper Schedule" Click="OnOpenAppClick"/>
+                    <MenuFlyoutSeparator/>
+                    <MenuFlyoutItem x:Name="TrayPauseItem" Text="Pause Schedule" Click="OnTogglePauseClick"/>
+                    <MenuFlyoutSeparator/>
+                    <MenuFlyoutItem Text="Exit" Click="OnExitClick"/>
+                </MenuFlyout>
+            </tb:TaskbarIcon.ContextFlyout>
+        </tb:TaskbarIcon>
+
+        <NavigationView x:Name="NavView" PaneDisplayMode="LeftCompact" IsBackEnabled="False" IsSettingsVisible="False">
+            <NavigationView.MenuItems>
+                <NavigationViewItem Icon="Home" Content="Library" Tag="library"/>
+                <NavigationViewItem Icon="Calendar" Content="Weekly" Tag="weekly"/>
+                <NavigationViewItem Icon="Favorite" Content="Overrides" Tag="overrides"/>
+                <NavigationViewItem Icon="Setting" Content="Settings" Tag="settings"/>
+            </NavigationView.MenuItems>
+
+            <Frame x:Name="ContentFrame"/>
+        </NavigationView>
+    </Grid>
+</Window>

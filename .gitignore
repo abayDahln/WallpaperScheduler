@@ -1,0 +1,72 @@
+# Build outputs
+bin/
+obj/
+out/
+
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Rider
+.idea/
+*.sln.iml
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# NuGet
+packages/
+*.nupkg
+*.nupkg.metadata
+*.snupkg
+
+# Windows App SDK / WinUI packaging
+.packages/
+AppPackages/
+BundleArtifacts/
+Generated Files/
+*.appx
+*.appxupload
+*.msix
+*.msixbundle
+*.appxbundle
+*.pri
+*.xr.xml
+
+# Test results & coverage
+TestResults/
+*.coverage
+*.coveragexml
+*.trx
+
+# Publish
+publish/
+*.pubxml.user
+
+# User secrets & signing keys
+secrets.json
+*.pfx
+*.p12
+*.snk
+
+# Local tool history (opencode)
+.history/
+
+# Logs & crash dumps
+logs/
+*.log
+crash.log
+*.dmp
+*.hdmp
+
+# Temp / OS files
+*.tmp
+*.temp
+Thumbs.db
+Desktop.ini
+
+documentation/
