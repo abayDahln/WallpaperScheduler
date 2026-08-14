@@ -14,6 +14,7 @@ namespace WallpaperScheduler.Services
         private System.Threading.Timer? _timer;
         private string? _lastAppliedWallpaperId;
         public bool IsPaused { get; private set; }
+        public string? LastAppliedWallpaperId => _lastAppliedWallpaperId;
 
         public event EventHandler<string>? OnWallpaperChanged;
         public event EventHandler<string>? OnWallpaperSchedulerlyFailed;

@@ -53,10 +53,5 @@ namespace WallpaperScheduler.Views
                 ThemeService.Apply(App.MainWindow, ViewModel.Theme);
             }
         }
-
-        private void OnDefaultWallpaperChanged(object sender, SelectionChangedEventArgs e)
-        {
-            ViewModel.UpdateDefaultWallpaper();
-        }
     }
 }

@@ -7,16 +7,16 @@
     xmlns:tb="using:H.NotifyIcon"
     xmlns:views="using:WallpaperScheduler.Views"
     mc:Ignorable="d"
-    Title="Wallpaper Schedule">
+    Title="Wallpaper Scheduler">
 
     <Grid>
         <tb:TaskbarIcon
             x:Name="TrayIcon"
-            ToolTipText="Wallpaper Schedule"
+            ToolTipText="Wallpaper Scheduler"
             IconSource="ms-appx:///Assets/AppIcon.ico">
             <tb:TaskbarIcon.ContextFlyout>
                 <MenuFlyout>
-                    <MenuFlyoutItem Text="Open Wallpaper Schedule" Click="OnOpenAppClick"/>
+                    <MenuFlyoutItem Text="Open Wallpaper Scheduler" Click="OnOpenAppClick"/>
                     <MenuFlyoutSeparator/>
                     <MenuFlyoutItem x:Name="TrayPauseItem" Text="Pause Schedule" Click="OnTogglePauseClick"/>
                     <MenuFlyoutSeparator/>
@@ -27,7 +27,7 @@
 
         <NavigationView x:Name="NavView" PaneDisplayMode="LeftCompact" IsBackEnabled="False" IsSettingsVisible="False">
             <NavigationView.MenuItems>
-                <NavigationViewItem Icon="Home" Content="Library" Tag="library"/>
+                <NavigationViewItem Icon="Home" Content="Overview" Tag="overview"/>
                 <NavigationViewItem Icon="Calendar" Content="Weekly" Tag="weekly"/>
                 <NavigationViewItem Icon="Favorite" Content="Overrides" Tag="overrides"/>
                 <NavigationViewItem Icon="Setting" Content="Settings" Tag="settings"/>

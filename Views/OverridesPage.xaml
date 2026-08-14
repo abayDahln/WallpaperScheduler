@@ -55,9 +55,13 @@
                                 </DataTemplate>
                             </ComboBox.ItemTemplate>
                         </ComboBox>
-                        <Button Content="Add Monthly Override" Click="OnAddMonthlyClick"
-                                Style="{StaticResource AccentButtonStyle}"
-                                HorizontalAlignment="Left"/>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button Content="Add Monthly Override" Click="OnAddMonthlyClick"
+                                    Style="{StaticResource AccentButtonStyle}"
+                                    HorizontalAlignment="Left"/>
+                            <Button Content="Import Wallpaper" Click="OnImportMonthlyClick"
+                                    HorizontalAlignment="Left"/>
+                        </StackPanel>
                     </StackPanel>
                 </Border>
 
@@ -118,9 +122,13 @@
                                 </DataTemplate>
                             </ComboBox.ItemTemplate>
                         </ComboBox>
-                        <Button Content="Add Date Override" Click="OnAddDateClick"
-                                Style="{StaticResource AccentButtonStyle}"
-                                HorizontalAlignment="Left"/>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button Content="Add Date Override" Click="OnAddDateClick"
+                                    Style="{StaticResource AccentButtonStyle}"
+                                    HorizontalAlignment="Left"/>
+                            <Button Content="Import Wallpaper" Click="OnImportDateClick"
+                                    HorizontalAlignment="Left"/>
+                        </StackPanel>
                     </StackPanel>
                 </Border>
 

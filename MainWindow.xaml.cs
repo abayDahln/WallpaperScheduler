@@ -31,7 +31,7 @@ namespace WallpaperScheduler
                 string tag = item.Tag?.ToString() ?? "library";
                 switch (tag)
                 {
-                    case "library": ContentFrame.Navigate(typeof(LibraryPage)); break;
+                    case "overview": ContentFrame.Navigate(typeof(OverviewPage)); break;
                     case "weekly": ContentFrame.Navigate(typeof(WeeklySchedulePage)); break;
                     case "overrides": ContentFrame.Navigate(typeof(OverridesPage)); break;
                     case "settings": ContentFrame.Navigate(typeof(SettingsPage)); break;

@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using WallpaperScheduler.Helpers;
 using WallpaperScheduler.Models;
 using WallpaperScheduler.Services;
 
@@ -25,6 +26,8 @@ namespace WallpaperScheduler.Views
             new DayEntry(DayOfWeek.Sunday),
         };
 
+        public ObservableCollection<WallpaperItem> Wallpapers { get; } = new();
+
         public ObservableCollection<DaySlotEditor> Rows { get; } = new();
 
         public WeeklySchedulePage()
@@ -33,6 +36,7 @@ namespace WallpaperScheduler.Views
             var app = (App)Application.Current;
             _configService = app.ConfigService;
             _schedulerEngine = app.SchedulerEngine;
+            foreach (var wp in _configService.Config.WallpaperLibrary) Wallpapers.Add(wp);
             DataContext = this;
             DayList.SelectedIndex = 0;
         }
@@ -54,29 +58,27 @@ namespace WallpaperScheduler.Views
             Rows.Clear();
             foreach (var s in GetSlots(SelectedDay))
             {
-                Rows.Add(new DaySlotEditor(s, WallpapersForSelected()));
+                Rows.Add(new DaySlotEditor(s, Wallpapers));
             }
         }
 
-        private ObservableCollection<WallpaperItem> WallpapersForSelected()
+        private async void OnImportClick(object sender, RoutedEventArgs e)
         {
-            var col = new ObservableCollection<WallpaperItem>();
-            foreach (var wp in _configService.Config.WallpaperLibrary) col.Add(wp);
-            return col;
+            var imported = await WallpaperImport.PickAndImportAsync(_configService);
+            foreach (var wp in imported) Wallpapers.Add(wp);
         }
 
         private void OnAddSlotClick(object sender, RoutedEventArgs e)
         {
-            var wallpapers = WallpapersForSelected();
             var slot = new TimeSlot
             {
                 Start = "00:00",
                 End = "24:00",
-                WallpaperId = wallpapers.FirstOrDefault()?.Id ?? string.Empty
+                WallpaperId = Wallpapers.FirstOrDefault()?.Id ?? string.Empty
             };
             GetSlots(SelectedDay).Add(slot);
             SaveConfig();
-            Rows.Add(new DaySlotEditor(slot, wallpapers));
+            Rows.Add(new DaySlotEditor(slot, Wallpapers));
             RefreshDaySummary();
         }
 

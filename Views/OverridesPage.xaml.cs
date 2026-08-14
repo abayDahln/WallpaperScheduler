@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using WallpaperScheduler.Helpers;
 using WallpaperScheduler.Models;
 using WallpaperScheduler.Services;
 
@@ -42,6 +43,20 @@ namespace WallpaperScheduler.Views
         {
             if (id == null) return "—";
             return _configService.Config.WallpaperLibrary.FirstOrDefault(w => w.Id == id)?.Label ?? "(missing " + id + ")";
+        }
+
+        private async void OnImportMonthlyClick(object sender, RoutedEventArgs e)
+        {
+            var imported = await WallpaperImport.PickAndImportAsync(_configService);
+            foreach (var wp in imported) Wallpapers.Add(wp);
+            if (imported.Count > 0) MonthlyWallpaperCombo.SelectedValue = imported[0].Id;
+        }
+
+        private async void OnImportDateClick(object sender, RoutedEventArgs e)
+        {
+            var imported = await WallpaperImport.PickAndImportAsync(_configService);
+            foreach (var wp in imported) Wallpapers.Add(wp);
+            if (imported.Count > 0) DateWallpaperCombo.SelectedValue = imported[0].Id;
         }
 
         private void OnAddMonthlyClick(object sender, RoutedEventArgs e)

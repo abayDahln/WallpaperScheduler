@@ -12,7 +12,6 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
         <TextBlock Text="Settings" Style="{StaticResource TitleTextBlockStyle}"/>
@@ -31,19 +30,6 @@
         <StackPanel Grid.Row="3" Spacing="8">
             <TextBlock Text="Theme" FontWeight="Bold"/>
             <ComboBox ItemsSource="{x:Bind ThemeOptions}" SelectedItem="{x:Bind ViewModel.Theme, Mode=TwoWay}" Width="200" SelectionChanged="OnThemeChanged"/>
-        </StackPanel>
-
-        <StackPanel Grid.Row="4" Spacing="8">
-            <TextBlock Text="Default Fallback Wallpaper" FontWeight="Bold"/>
-            <ComboBox ItemsSource="{x:Bind ViewModel.Wallpapers}"
-                      DisplayMemberPath="Label"
-                      SelectedValuePath="Id"
-                      SelectedValue="{x:Bind ViewModel.DefaultWallpaperId, Mode=TwoWay}"
-                      Width="280"
-                      PlaceholderText="None"
-                      SelectionChanged="OnDefaultWallpaperChanged"/>
-            <TextBlock Text="Used when no time slot applies (e.g. fully empty day)." FontSize="12"
-                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
         </StackPanel>
     </Grid>
 </Page>

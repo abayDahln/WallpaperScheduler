@@ -67,6 +67,7 @@
                     <TextBlock x:Name="SelectedDayTitle" Text="Monday" Style="{StaticResource SubtitleTextBlockStyle}" VerticalAlignment="Center"/>
                     <Button Content="+ Add Slot" Click="OnAddSlotClick"/>
                     <Button Content="Clear Day" Click="OnClearDayClick"/>
+                    <Button Content="Import Wallpaper" Click="OnImportClick"/>
                     <TextBlock Text="Slots must not overlap. Gaps fall back to the previous slot's wallpaper."
                                FontSize="12"
                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"

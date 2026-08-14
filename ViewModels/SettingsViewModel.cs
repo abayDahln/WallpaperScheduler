@@ -1,6 +1,5 @@
-using System.Collections.ObjectModel;
+using System;
 using CommunityToolkit.Mvvm.ComponentModel;
-using WallpaperScheduler.Models;
 using WallpaperScheduler.Services;
 
 namespace WallpaperScheduler.ViewModels
@@ -9,11 +8,7 @@ namespace WallpaperScheduler.ViewModels
     {
         private readonly ConfigService _configService;
 
-        public ObservableCollection<WallpaperItem> Wallpapers { get; } = new();
-
 #pragma warning disable MVVMTK0045
-        [ObservableProperty]
-        private string? _defaultWallpaperId = null;
         [ObservableProperty]
         private bool _autoStart;
 
@@ -39,8 +34,6 @@ namespace WallpaperScheduler.ViewModels
             NotifyOnChange = settings.NotifyOnWallpaperChange;
             WallpaperStyle = settings.WallpaperStyle;
             Theme = settings.ThemeOverride;
-            DefaultWallpaperId = settings.DefaultWallpaperId;
-            foreach (var wp in configService.Config.WallpaperLibrary) Wallpapers.Add(wp);
         }
 
         public void ToggleAutoStart()
@@ -78,12 +71,6 @@ namespace WallpaperScheduler.ViewModels
         public void UpdateTheme()
         {
             _configService.Config.Settings.ThemeOverride = Theme;
-            _configService.SaveConfig();
-        }
-
-        public void UpdateDefaultWallpaper()
-        {
-            _configService.Config.Settings.DefaultWallpaperId = DefaultWallpaperId;
             _configService.SaveConfig();
         }
     }

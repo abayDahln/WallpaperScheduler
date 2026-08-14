@@ -27,9 +27,23 @@ namespace WallpaperScheduler.Models
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "WallpaperSchedule", "Wallpapers"),
             FileName);
 
+        private Microsoft.UI.Xaml.Media.ImageSource? _thumbnail;
+
         [JsonIgnore]
-        public Microsoft.UI.Xaml.Media.ImageSource Thumbnail =>
-            new Microsoft.UI.Xaml.Media.Imaging.BitmapImage(new Uri(ThumbnailPath));
+        public Microsoft.UI.Xaml.Media.ImageSource Thumbnail
+        {
+            get
+            {
+                if (_thumbnail == null)
+                {
+                    _thumbnail = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage(new Uri(ThumbnailPath))
+                    {
+                        DecodePixelWidth = 512
+                    };
+                }
+                return _thumbnail;
+            }
+        }
     }
 
     public class TimeSlot

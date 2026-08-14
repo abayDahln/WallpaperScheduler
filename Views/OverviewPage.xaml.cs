@@ -1,46 +1,83 @@
 using System;
+using System.Linq;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Media.Imaging;
-using Windows.Storage.Pickers;
 using WallpaperScheduler.Models;
-using WallpaperScheduler.Services;
 using WallpaperScheduler.ViewModels;
-using WinRT.Interop;
+using WallpaperScheduler.Services;
 
 namespace WallpaperScheduler.Views
 {
-    public sealed partial class LibraryPage : Page
+    public sealed partial class OverviewPage : Page
     {
-        public LibraryViewModel ViewModel { get; private set; } = null!;
+        public OverviewViewModel ViewModel { get; private set; } = null!;
         private WallpaperItem? _selected;
+        private bool _loadingDefault;
 
-        public LibraryPage()
+        public OverviewPage()
         {
             InitializeComponent();
             var app = (App)Application.Current;
-            ViewModel = new LibraryViewModel(app.ConfigService, app.SchedulerEngine);
+            ViewModel = new OverviewViewModel(app.ConfigService, app.SchedulerEngine);
             DataContext = this;
+
+            LoadCurrentCard();
+            StatWallpapers.Text = ViewModel.WallpaperCount.ToString();
+            StatWeekly.Text = ViewModel.WeeklySlotCount.ToString();
+            StatMonthly.Text = ViewModel.MonthlyCount.ToString();
+            StatDates.Text = ViewModel.DateCount.ToString();
+
+            Loaded += (_, _) => LoadDefault();
         }
 
-        private async void OnImportClick(object sender, RoutedEventArgs e)
+        private void LoadCurrentCard()
         {
-            if (App.MainWindow == null) return;
-
-            var picker = new FileOpenPicker();
-            InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(App.MainWindow));
-            picker.FileTypeFilter.Add(".jpg");
-            picker.FileTypeFilter.Add(".jpeg");
-            picker.FileTypeFilter.Add(".png");
-            picker.FileTypeFilter.Add(".bmp");
-
-            var files = await picker.PickMultipleFilesAsync();
-            if (files == null || files.Count == 0) return;
-
-            foreach (var file in files)
+            var current = ViewModel.CurrentWallpaper;
+            if (current != null)
             {
-                ViewModel.AddWallpaper(file.Path);
+                CurrentImage.Source = current.Thumbnail;
+                CurrentLabel.Text = current.Label;
             }
+            else
+            {
+                CurrentLabel.Text = "No wallpaper applies right now";
+            }
+            NextChangeText.Text = $"Next change: {ViewModel.NextChangeTime:ddd, dd MMM HH:mm}";
+        }
+
+        private void LoadDefault()
+        {
+            _loadingDefault = true;
+            DefaultCombo.SelectedValue = string.IsNullOrEmpty(ViewModel.DefaultWallpaperId) ? null : ViewModel.DefaultWallpaperId;
+            _loadingDefault = false;
+            UpdateDefaultLabel();
+        }
+
+        private void UpdateDefaultLabel()
+        {
+            string? id = ViewModel.DefaultWallpaperId;
+            var item = string.IsNullOrEmpty(id) ? null : ViewModel.Wallpapers.FirstOrDefault(w => w.Id == id);
+            DefaultLabelText.Text = item?.Label ?? "none";
+        }
+
+        private void OnApplyCurrentClick(object sender, RoutedEventArgs e)
+        {
+            var current = ViewModel.CurrentWallpaper;
+            if (current != null) ViewModel.ApplyNow(current);
+        }
+
+        private void OnDefaultChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_loadingDefault) return;
+            ViewModel.SetDefaultWallpaper(DefaultCombo.SelectedValue as string);
+            UpdateDefaultLabel();
+        }
+
+        private void OnClearDefaultClick(object sender, RoutedEventArgs e)
+        {
+            ViewModel.ClearDefaultWallpaper();
+            DefaultCombo.SelectedValue = null;
+            UpdateDefaultLabel();
         }
 
         private void OnSelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -51,7 +88,7 @@ namespace WallpaperScheduler.Views
                 DetailPane.Visibility = Visibility.Visible;
                 LabelBox.Text = item.Label;
                 FileNameText.Text = $"{item.FileName}  \u00b7  added {item.AddedAt:dd MMM yyyy}";
-                PreviewImage.Source = new BitmapImage(new Uri(item.ThumbnailPath));
+                PreviewImage.Source = item.Thumbnail;
             }
         }
 
@@ -109,6 +146,7 @@ namespace WallpaperScheduler.Views
             ViewModel.DeleteWallpaper(item);
             _selected = null;
             DetailPane.Visibility = Visibility.Collapsed;
+            LoadDefault();
         }
     }
 }

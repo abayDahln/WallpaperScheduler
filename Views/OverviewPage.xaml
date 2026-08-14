@@ -1,0 +1,172 @@
+<Page
+    x:Class="WallpaperScheduler.Views.OverviewPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:models="using:WallpaperScheduler.Models"
+    mc:Ignorable="d">
+
+    <Grid Padding="24" RowSpacing="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Spacing="4">
+            <TextBlock Text="Overview" Style="{StaticResource TitleTextBlockStyle}"/>
+            <TextBlock Text="Review your schedule and set the default wallpaper used when no slot applies."
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+        </StackPanel>
+
+        <Grid Grid.Row="1" ColumnSpacing="16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Current wallpaper -->
+            <Border Grid.Column="0" Padding="16" CornerRadius="8"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="Current Wallpaper" Style="{StaticResource SubtitleTextBlockStyle}"/>
+                    <Border Height="110" CornerRadius="8" Background="{ThemeResource ControlFillColorSecondaryBrush}">
+                        <Image x:Name="CurrentImage" Stretch="UniformToFill" Margin="2"/>
+                    </Border>
+                    <TextBlock x:Name="CurrentLabel" TextWrapping="Wrap" FontWeight="SemiBold"/>
+                    <TextBlock x:Name="NextChangeText" FontSize="12"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                    <Button Content="Apply Now" Click="OnApplyCurrentClick" HorizontalAlignment="Left"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Default wallpaper -->
+            <Border Grid.Column="1" Padding="16" CornerRadius="8"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="Default Wallpaper" Style="{StaticResource SubtitleTextBlockStyle}"/>
+                    <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               Text="Used when the schedule has no wallpaper for the current time."
+                               TextWrapping="Wrap"/>
+                    <ComboBox x:Name="DefaultCombo"
+                              ItemsSource="{x:Bind ViewModel.Wallpapers, Mode=OneWay}"
+                              SelectedValuePath="Id"
+                              SelectionChanged="OnDefaultChanged"
+                              PlaceholderText="None"
+                              HorizontalAlignment="Left" MinWidth="220">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="models:WallpaperItem">
+                                <StackPanel Orientation="Horizontal" Spacing="8" Padding="2">
+                                    <Border Width="24" Height="24" CornerRadius="4"
+                                            Background="{ThemeResource ControlFillColorSecondaryBrush}">
+                                        <Image Source="{x:Bind Thumbnail}" Stretch="UniformToFill"/>
+                                    </Border>
+                                    <TextBlock Text="{x:Bind Label}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Text="Default:" FontSize="12" VerticalAlignment="Center"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                        <TextBlock x:Name="DefaultLabelText" FontSize="12" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                        <Button Content="Clear" FontSize="12" Click="OnClearDefaultClick" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Schedule summary -->
+            <Border Grid.Column="2" Padding="16" CornerRadius="8"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Schedule Summary" Style="{StaticResource SubtitleTextBlockStyle}"/>
+                    <TextBlock><Run Text="Wallpapers: "/><Run x:Name="StatWallpapers" FontWeight="SemiBold"/></TextBlock>
+                    <TextBlock><Run Text="Weekly slots: "/><Run x:Name="StatWeekly" FontWeight="SemiBold"/></TextBlock>
+                    <TextBlock><Run Text="Monthly overrides: "/><Run x:Name="StatMonthly" FontWeight="SemiBold"/></TextBlock>
+                    <TextBlock><Run Text="Date overrides: "/><Run x:Name="StatDates" FontWeight="SemiBold"/></TextBlock>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="12" Margin="0,8,0,0">
+            <TextBlock Text="Wallpaper Library" Style="{StaticResource SubtitleTextBlockStyle}" VerticalAlignment="Center"/>
+            <TextBlock Text="Import wallpapers from the Weekly, Monthly, or Specific Date pages."
+                       FontSize="12"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                       VerticalAlignment="Center"/>
+        </StackPanel>
+
+        <Grid Grid.Row="3" ColumnSpacing="20">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <ListView x:Name="WallpaperList"
+                      ItemsSource="{x:Bind ViewModel.Wallpapers, Mode=OneWay}"
+                      SelectionChanged="OnSelectionChanged"
+                      Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                      BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                      BorderThickness="1"
+                      CornerRadius="8">
+                <ListView.ItemTemplate>
+                    <DataTemplate x:DataType="models:WallpaperItem">
+                        <Grid Padding="8" ColumnSpacing="12" CornerRadius="6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="56"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <Border Grid.Column="0" Width="48" Height="48" CornerRadius="6"
+                                    Background="{ThemeResource ControlFillColorSecondaryBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1">
+                                <Image Stretch="UniformToFill" Source="{x:Bind Thumbnail}"/>
+                            </Border>
+
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                <TextBlock Text="{x:Bind Label}" FontWeight="SemiBold"/>
+                                <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           Text="{x:Bind FileName}"/>
+                            </StackPanel>
+
+                            <Button Grid.Column="2" Content="Apply Now" VerticalAlignment="Center"
+                                    Click="OnApplyClick" Tag="{Binding}"/>
+                        </Grid>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+
+            <!-- Detail / edit pane -->
+            <StackPanel Grid.Column="1" Spacing="12" Visibility="Collapsed" x:Name="DetailPane" MinWidth="300" MaxWidth="360">
+                <Border Padding="16" CornerRadius="8"
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="Wallpaper Details" Style="{StaticResource SubtitleTextBlockStyle}"/>
+                        <Border Height="140" CornerRadius="8" Background="{ThemeResource ControlFillColorSecondaryBrush}">
+                            <Image x:Name="PreviewImage" Stretch="UniformToFill" Margin="2"/>
+                        </Border>
+                        <TextBox Header="Label" x:Name="LabelBox" TextChanged="OnLabelChanged"/>
+                        <TextBlock x:Name="FileNameText" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button Content="Apply Now" Click="OnApplyDetailClick"/>
+                            <Button Content="Delete" Click="OnDeleteDetailClick"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Page>
