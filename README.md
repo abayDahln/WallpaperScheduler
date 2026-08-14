@@ -66,7 +66,3 @@ Config and wallpapers live under `%LocalAppData%\WallpaperSchedule\`:
 - .NET 8 (`net8.0-windows10.0.19041.0`)
 - CommunityToolkit.Mvvm 8.x
 - H.NotifyIcon (system tray)
-
-## License
-
-MIT
