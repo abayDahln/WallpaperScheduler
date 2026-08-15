@@ -206,23 +206,17 @@ namespace WallpaperScheduler.Views
             flyout.ShowAt(btn);
         }
 
-        private void OnSlotStyleChanged(object sender, SelectionChangedEventArgs e)
+        private async void OnSlotStyleChanged(object sender, SelectionChangedEventArgs e)
         {
             if (sender is ComboBox cb && cb.DataContext is DaySlotEditor editor
                 && cb.SelectedItem is string style && editor.WallpaperStyle != style)
             {
                 editor.WallpaperStyle = style;
-                if (ValidateAndSave()) { }
-            }
-        }
-
-        private async void OnCropClick(object sender, RoutedEventArgs e)
-        {
-            if (sender is not Button btn || btn.Tag is not DaySlotEditor editor) return;
-            if (editor.Wallpaper is not WallpaperItem wp) return;
-            if (await CropHelper.EditCropAsync(XamlRoot, wp))
-            {
-                _configService.SaveConfig();
+                if (string.Equals(style, "Custom", StringComparison.OrdinalIgnoreCase) && editor.Wallpaper is WallpaperItem wp)
+                {
+                    await CropHelper.EditCropAsync(XamlRoot, wp);
+                    _configService.SaveConfig();
+                }
                 if (ValidateAndSave()) { }
             }
         }

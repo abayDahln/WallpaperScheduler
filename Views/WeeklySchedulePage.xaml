@@ -159,17 +159,9 @@
                                             <StackPanel Grid.Column="3" Spacing="4">
                                                 <TextBlock Text="Style" FontSize="11"
                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                                                <StackPanel Orientation="Horizontal" Spacing="4">
-                                                    <ComboBox ItemsSource="{x:Bind StyleOptions}" Width="110" Height="32"
-                                                              SelectedItem="{x:Bind EffectiveStyle, Mode=OneWay}"
-                                                              SelectionChanged="OnSlotStyleChanged"/>
-                                                    <Button Width="32" Height="32" Padding="4"
-                                                            AutomationProperties.Name="Set crop area"
-                                                            ToolTipService.ToolTip="Set crop area"
-                                                            Click="OnCropClick" Tag="{Binding}">
-                                                        <FontIcon Glyph="&#xE7B8;" FontSize="14"/>
-                                                    </Button>
-                                                </StackPanel>
+                                                <ComboBox ItemsSource="{x:Bind StyleOptions}" Width="110" Height="32"
+                                                          SelectedItem="{x:Bind EffectiveStyle, Mode=OneWay}"
+                                                          SelectionChanged="OnSlotStyleChanged"/>
                                             </StackPanel>
 
                                             <Button Grid.Column="5" Content="Remove" Click="OnRemoveSlotClick" Tag="{Binding}"

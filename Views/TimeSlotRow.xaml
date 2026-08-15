@@ -50,15 +50,8 @@
 
             <StackPanel Grid.Column="3" Spacing="4">
                 <TextBlock Text="Style" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                <StackPanel Orientation="Horizontal" Spacing="4">
-                    <ComboBox x:Name="StyleCombo" ItemsSource="{x:Bind StyleOptions}" Width="110" Height="32"
-                              SelectionChanged="OnStyleChanged"/>
-                    <Button x:Name="CropBtn" Width="32" Height="32" Padding="4"
-                            AutomationProperties.Name="Set crop area"
-                            ToolTipService.ToolTip="Set crop area" Click="OnCropClick">
-                        <FontIcon Glyph="&#xE7B8;" FontSize="14"/>
-                    </Button>
-                </StackPanel>
+                <ComboBox x:Name="StyleCombo" ItemsSource="{x:Bind StyleOptions}" Width="110" Height="32"
+                          SelectionChanged="OnStyleChanged"/>
             </StackPanel>
 
             <Button x:Name="RemoveBtn" Grid.Column="5" Content="Remove" VerticalAlignment="Center"

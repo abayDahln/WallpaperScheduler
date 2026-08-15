@@ -12,7 +12,7 @@
           PointerMoved="OnPointerMoved"
           PointerReleased="OnPointerReleased"
           PointerCaptureLost="OnPointerCaptureLost">
-        <Image x:Name="Img" Stretch="UniformToFill"/>
+        <Image x:Name="Img" Stretch="Uniform"/>
         <Canvas x:Name="Overlay"/>
     </Grid>
 </UserControl>

@@ -56,22 +56,19 @@ namespace WallpaperScheduler.Views
         private static string FormatTime(TimeSpan t)
             => t >= TimeSpan.FromDays(1) ? "24:00" : t.ToString(@"hh\:mm");
 
-        private void OnStyleChanged(object sender, SelectionChangedEventArgs e)
+        private async void OnStyleChanged(object sender, SelectionChangedEventArgs e)
         {
             if (_settingStyle || StyleCombo.SelectedItem is not string style) return;
             if (style == _slot.WallpaperStyle) return;
             _slot.WallpaperStyle = style;
-            Edited?.Invoke(this, EventArgs.Empty);
-        }
-
-        private async void OnCropClick(object sender, RoutedEventArgs e)
-        {
-            if (CurrentWallpaper is not WallpaperItem wp) return;
-            if (await CropHelper.EditCropAsync(XamlRoot, wp))
+            if (string.Equals(style, "Custom", StringComparison.OrdinalIgnoreCase) && CurrentWallpaper is WallpaperItem wp)
             {
-                ((App)Application.Current).ConfigService.SaveConfig();
-                Edited?.Invoke(this, EventArgs.Empty);
+                if (await CropHelper.EditCropAsync(XamlRoot, wp))
+                {
+                    ((App)Application.Current).ConfigService.SaveConfig();
+                }
             }
+            Edited?.Invoke(this, EventArgs.Empty);
         }
 
         private void OnStartClick(object sender, RoutedEventArgs e) => PickTime(StartBtn, isEnd: false);
