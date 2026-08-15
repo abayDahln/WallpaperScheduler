@@ -7,7 +7,7 @@ namespace WallpaperScheduler.Helpers
 {
     public static class ScheduleResolver
     {
-        public static string? ResolveActiveWallpaper(AppConfig config, DateTime now, ref string? lastAppliedWallpaperId)
+        public static (string? WallpaperId, string? Style) ResolveActiveWallpaper(AppConfig config, DateTime now, ref string? lastAppliedWallpaperId)
         {
             string dateStr = now.ToString("yyyy-MM-dd");
             TimeSpan time = now.TimeOfDay;
@@ -16,9 +16,9 @@ namespace WallpaperScheduler.Helpers
             var dateOverride = config.DateOverrides.FirstOrDefault(d => d.Date == dateStr);
             if (dateOverride != null && dateOverride.Slots.Count > 0)
             {
-                var id = ResolveFromSlots(dateOverride.Slots, time, lastAppliedWallpaperId, config.Settings.DefaultWallpaperId);
-                if (id != null) lastAppliedWallpaperId = id;
-                return id ?? config.Settings.DefaultWallpaperId;
+                var r = ResolveFromSlots(dateOverride.Slots, time, lastAppliedWallpaperId, config.Settings.DefaultWallpaperId);
+                if (r.WallpaperId != null) lastAppliedWallpaperId = r.WallpaperId;
+                return (r.WallpaperId ?? config.Settings.DefaultWallpaperId, r.Slot?.WallpaperStyle);
             }
 
             // 2. Monthly Recurring Override
@@ -26,36 +26,36 @@ namespace WallpaperScheduler.Helpers
             var monthlyOverride = config.MonthlyOverrides.FirstOrDefault(m => m.DayOfMonth == dayOfMonth);
             if (monthlyOverride != null && monthlyOverride.Slots.Count > 0)
             {
-                var id = ResolveFromSlots(monthlyOverride.Slots, time, lastAppliedWallpaperId, config.Settings.DefaultWallpaperId);
-                if (id != null) lastAppliedWallpaperId = id;
-                return id ?? config.Settings.DefaultWallpaperId;
+                var r = ResolveFromSlots(monthlyOverride.Slots, time, lastAppliedWallpaperId, config.Settings.DefaultWallpaperId);
+                if (r.WallpaperId != null) lastAppliedWallpaperId = r.WallpaperId;
+                return (r.WallpaperId ?? config.Settings.DefaultWallpaperId, r.Slot?.WallpaperStyle);
             }
 
             // 3. Weekly Schedule
             var weeklySlots = config.WeeklySchedule.GetDaySlots(now.DayOfWeek);
             if (weeklySlots.Count > 0)
             {
-                var id = ResolveFromSlots(weeklySlots, time, lastAppliedWallpaperId, config.Settings.DefaultWallpaperId);
-                if (id != null) lastAppliedWallpaperId = id;
-                return id ?? config.Settings.DefaultWallpaperId;
+                var r = ResolveFromSlots(weeklySlots, time, lastAppliedWallpaperId, config.Settings.DefaultWallpaperId);
+                if (r.WallpaperId != null) lastAppliedWallpaperId = r.WallpaperId;
+                return (r.WallpaperId ?? config.Settings.DefaultWallpaperId, r.Slot?.WallpaperStyle);
             }
 
             // 4. Default Fallback
-            return config.Settings.DefaultWallpaperId;
+            return (config.Settings.DefaultWallpaperId, null);
         }
 
-        private static string? ResolveFromSlots(List<TimeSlot> slots, TimeSpan time, string? lastApplied, string? defaultWp)
+        private static (TimeSlot? Slot, string? WallpaperId) ResolveFromSlots(List<TimeSlot> slots, TimeSpan time, string? lastApplied, string? defaultWp)
         {
             // Exact covering slot
             var matchingSlot = slots.FirstOrDefault(s => s.StartTimeSpan <= time && time < s.EndTimeSpan);
-            if (matchingSlot != null) return matchingSlot.WallpaperId;
+            if (matchingSlot != null) return (matchingSlot, matchingSlot.WallpaperId);
 
             // Gap fallback: find last ended slot earlier today
             var passedSlot = slots.Where(s => s.EndTimeSpan <= time).OrderByDescending(s => s.EndTimeSpan).FirstOrDefault();
-            if (passedSlot != null) return passedSlot.WallpaperId;
+            if (passedSlot != null) return (passedSlot, passedSlot.WallpaperId);
 
             // Before first slot gap: last applied state or default
-            return lastApplied ?? defaultWp;
+            return (null, lastApplied ?? defaultWp);
         }
 
         public static DateTime GetNextEventTime(AppConfig config, DateTime now)

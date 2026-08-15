@@ -5,9 +5,12 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:tb="using:H.NotifyIcon"
-    xmlns:views="using:WallpaperScheduler.Views"
     mc:Ignorable="d"
     Title="Wallpaper Scheduler">
+
+    <Window.SystemBackdrop>
+        <MicaBackdrop/>
+    </Window.SystemBackdrop>
 
     <Grid>
         <tb:TaskbarIcon
@@ -25,12 +28,40 @@
             </tb:TaskbarIcon.ContextFlyout>
         </tb:TaskbarIcon>
 
-        <NavigationView x:Name="NavView" PaneDisplayMode="LeftCompact" IsBackEnabled="False" IsSettingsVisible="False">
+        <NavigationView x:Name="NavView"
+                        PaneDisplayMode="Left"
+                        IsPaneOpen="True"
+                        OpenPaneLength="224"
+                        IsBackEnabled="False"
+                        IsBackButtonVisible="Collapsed"
+                        IsSettingsVisible="False"
+                        PaneTitle="Wallpaper Scheduler">
             <NavigationView.MenuItems>
-                <NavigationViewItem Icon="Home" Content="Overview" Tag="overview"/>
-                <NavigationViewItem Icon="Calendar" Content="Weekly" Tag="weekly"/>
-                <NavigationViewItem Icon="Favorite" Content="Overrides" Tag="overrides"/>
-                <NavigationViewItem Icon="Setting" Content="Settings" Tag="settings"/>
+                <NavigationViewItem Content="Overview" Tag="overview">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE80F;"/>
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem Content="Weekly" Tag="weekly">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE787;"/>
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem Content="Monthly" Tag="monthly">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE8BF;"/>
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem Content="Dates" Tag="dates">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE8C1;"/>
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem Content="Settings" Tag="settings">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE713;"/>
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
             </NavigationView.MenuItems>
 
             <Frame x:Name="ContentFrame"/>

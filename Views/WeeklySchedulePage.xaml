@@ -5,40 +5,37 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:local="using:WallpaperScheduler.Views"
-    xmlns:models="using:WallpaperScheduler.Models"
     mc:Ignorable="d">
 
-    <Grid Padding="24" ColumnSpacing="24" RowSpacing="12">
+    <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="12">
-            <TextBlock Text="Weekly Schedule" Style="{StaticResource TitleTextBlockStyle}" VerticalAlignment="Center"/>
+        <StackPanel Grid.Row="0" Padding="32,28,32,0" Spacing="6">
+            <TextBlock Text="Weekly Schedule" Style="{StaticResource TitleTextBlockStyle}"/>
             <TextBlock Text="Pick a day, then edit its time slots. Changes save automatically."
-                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                       VerticalAlignment="Center"/>
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
         </StackPanel>
 
-        <Grid Grid.Row="1" ColumnSpacing="24">
+        <Grid x:Name="ContentGrid" Grid.Row="1" Margin="32,20,0,28"
+              ColumnSpacing="24">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="280"/>
+                <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Day list -->
+            <!-- Day list (wide: fills column height; narrow: replaced by combo) -->
             <ListView x:Name="DayList"
                       Grid.Column="0"
+                      Width="240"
                       ItemsSource="{x:Bind Days, Mode=OneWay}"
                       SelectionChanged="OnDaySelectionChanged"
-                      Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                      BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                      BorderThickness="1"
-                      CornerRadius="8">
+                      SelectionMode="Single">
                 <ListView.ItemTemplate>
                     <DataTemplate x:DataType="local:DayEntry">
-                        <Grid Padding="12,10">
+                        <Grid Padding="8,10">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
@@ -48,104 +45,170 @@
                                 <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                            Text="{x:Bind Summary, Mode=OneWay}"/>
                             </StackPanel>
-                            <TextBlock Grid.Column="1" Text="{x:Bind SlotCount, Mode=OneWay}" VerticalAlignment="Center"
-                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                            <Border Grid.Column="1" Padding="8,2" CornerRadius="10" VerticalAlignment="Center"
+                                    Background="{ThemeResource ControlFillColorSecondaryBrush}">
+                                <TextBlock Text="{x:Bind SlotCount, Mode=OneWay}" FontSize="12" FontWeight="SemiBold"/>
+                            </Border>
                         </Grid>
                     </DataTemplate>
                 </ListView.ItemTemplate>
             </ListView>
 
             <!-- Slot editor -->
-            <Grid Grid.Column="1" RowSpacing="12">
+            <Grid x:Name="EditorGrid" Grid.Column="1" RowSpacing="12">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="12">
-                    <TextBlock x:Name="SelectedDayTitle" Text="Monday" Style="{StaticResource SubtitleTextBlockStyle}" VerticalAlignment="Center"/>
-                    <Button Content="+ Add Slot" Click="OnAddSlotClick"/>
-                    <Button Content="Clear Day" Click="OnClearDayClick"/>
-                    <Button Content="Import Wallpaper" Click="OnImportClick"/>
-                    <TextBlock Text="Slots must not overlap. Gaps fall back to the previous slot's wallpaper."
-                               FontSize="12"
-                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                               VerticalAlignment="Center"/>
+                <StackPanel Grid.Row="0" Margin="0,0,32,0" Spacing="8">
+                    <ComboBox x:Name="NarrowDayCombo" ItemsSource="{x:Bind Days, Mode=OneWay}"
+                              DisplayMemberPath="Name" Width="180" Visibility="Collapsed"
+                              SelectionChanged="OnNarrowDaySelected"/>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock x:Name="SelectedDayTitle" Text="Monday" Style="{StaticResource SubtitleTextBlockStyle}"/>
+                    </StackPanel>
                 </StackPanel>
 
-                <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8" Margin="0,4,0,8">
-                    <TextBlock Text="Copy this day to:" VerticalAlignment="Center"/>
-                    <ComboBox x:Name="CopyTargetDay"
-                              ItemsSource="{x:Bind Days, Mode=OneWay}"
-                              DisplayMemberPath="Name"
-                              Width="180"/>
-                    <Button Content="Copy" Click="OnCopyToClick"/>
-                </StackPanel>
+                <Grid Grid.Row="1" Margin="0,4,32,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
 
-                <ScrollViewer Grid.Row="2">
-                    <ItemsControl ItemsSource="{x:Bind Rows}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="local:DaySlotEditor">
-                                <Border Padding="12" Margin="0,4" CornerRadius="8"
-                                        Background="{ThemeResource ControlFillColorSecondaryBrush}"
-                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                        BorderThickness="1">
-                                    <Grid ColumnSpacing="12">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="130"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="130"/>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
+                        <TextBlock Text="Copy this day to:" VerticalAlignment="Center"/>
+                        <ComboBox x:Name="CopyTargetDay"
+                                  ItemsSource="{x:Bind Days, Mode=OneWay}"
+                                  DisplayMemberPath="Name"
+                                  Width="180"/>
+                        <Button Content="Copy" Click="OnCopyToClick"/>
+                    </StackPanel>
 
-                                        <TextBlock Grid.Column="0" Text="Start" VerticalAlignment="Center"
-                                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                                        <TimePicker Grid.Column="1" Time="{x:Bind StartTime, Mode=TwoWay}"
-                                                    ClockIdentifier="24HourClock"
-                                                    TimeChanged="OnSlotEdited"
-                                                    HorizontalAlignment="Left"/>
-                                        <TextBlock Grid.Column="2" Text="End" VerticalAlignment="Center"
-                                                   Margin="8,0,0,0"
-                                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                                        <TimePicker Grid.Column="3" Time="{x:Bind EndTime, Mode=TwoWay}"
-                                                    ClockIdentifier="24HourClock"
-                                                    TimeChanged="OnSlotEdited"
-                                                    HorizontalAlignment="Left"/>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                        <Button Content="Clear Day" Click="OnClearDayClick"/>
+                        <Button Click="OnAddSlotClick" Style="{StaticResource AccentButtonStyle}"
+                                Width="32" Height="32" Padding="4"
+                                AutomationProperties.Name="Add Wallpaper"
+                                ToolTipService.ToolTip="Add Wallpaper" VerticalAlignment="Center">
+                            <FontIcon Glyph="&#xE710;" FontSize="14"/>
+                        </Button>
+                    </StackPanel>
+                </Grid>
 
-                                        <!-- Wallpaper picker with thumbnail -->
-                                        <ComboBox Grid.Column="4"
-                                                  ItemsSource="{x:Bind Wallpapers}"
-                                                  SelectedValuePath="Id"
-                                                  SelectedValue="{x:Bind WallpaperId, Mode=OneWay}"
-                                                  SelectionChanged="OnWallpaperSelected"
-                                                  PlaceholderText="Select wallpaper…"
-                                                  VerticalAlignment="Center"
-                                                  MinWidth="220">
-                                            <ComboBox.ItemTemplate>
-                                                <DataTemplate x:DataType="models:WallpaperItem">
-                                                    <StackPanel Orientation="Horizontal" Spacing="8" Padding="2">
-                                                        <Border Width="28" Height="28" CornerRadius="4"
+                <ScrollViewer Grid.Row="2" Margin="0,4,0,0"
+                              HorizontalScrollBarVisibility="Disabled">
+                    <Grid>
+                        <StackPanel x:Name="EmptyState" Visibility="Collapsed" Padding="12,16" Spacing="4" Margin="0,0,32,0">
+                            <TextBlock Text="No slots for this day" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                            <TextBlock Text="Click &quot;+ Add Slot&quot; and pick a wallpaper to schedule this day."
+                                       FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                        </StackPanel>
+                        <ItemsControl ItemsSource="{x:Bind Rows}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="local:DaySlotEditor">
+                                    <Border Padding="12" Margin="0,4,32,4" CornerRadius="8"
+                                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                            BorderThickness="1">
+                                        <Grid ColumnSpacing="16">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="180"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <StackPanel Grid.Column="0" Spacing="4">
+                                                <TextBlock Text="Start time" FontSize="11"
+                                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                                <Button Click="OnStartTimeClick" Tag="{Binding}" Width="68" Height="32"
+                                                        Padding="0" FontSize="14" Content="{x:Bind StartLabel}"
+                                                        HorizontalContentAlignment="Center"/>
+                                            </StackPanel>
+
+                                            <StackPanel Grid.Column="1" Spacing="4">
+                                                <TextBlock Text="End time" FontSize="11"
+                                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                                <Button Click="OnEndTimeClick" Tag="{Binding}" Width="68" Height="32"
+                                                        Padding="0" FontSize="14" Content="{x:Bind EndLabel}"
+                                                        HorizontalContentAlignment="Center"/>
+                                            </StackPanel>
+
+                                            <StackPanel Grid.Column="2" Spacing="4">
+                                                <TextBlock Text="Wallpaper" FontSize="11"
+                                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                                <Button Click="OnPickWallpaperClick" Tag="{Binding}" Height="40"
+                                                        Padding="8,2" HorizontalAlignment="Stretch"
+                                                        HorizontalContentAlignment="Left"
+                                                        AutomationProperties.Name="{x:Bind WallpaperLabel}">
+                                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                                        <Border Width="48" Height="27" CornerRadius="4"
                                                                 Background="{ThemeResource ControlFillColorSecondaryBrush}">
                                                             <Image Source="{x:Bind Thumbnail}" Stretch="UniformToFill"/>
                                                         </Border>
-                                                        <TextBlock Text="{x:Bind Label}" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="{x:Bind WallpaperLabel}" VerticalAlignment="Center"
+                                                                   TextTrimming="CharacterEllipsis" MaxWidth="100"/>
                                                     </StackPanel>
-                                                </DataTemplate>
-                                            </ComboBox.ItemTemplate>
-                                        </ComboBox>
+                                                </Button>
+                                            </StackPanel>
 
-                                        <Button Grid.Column="5" Content="Remove" Click="OnRemoveSlotClick" Tag="{Binding}"
-                                                VerticalAlignment="Center"/>
-                                    </Grid>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                                            <StackPanel Grid.Column="3" Spacing="4">
+                                                <TextBlock Text="Style" FontSize="11"
+                                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                                    <ComboBox ItemsSource="{x:Bind StyleOptions}" Width="110" Height="32"
+                                                              SelectedItem="{x:Bind EffectiveStyle, Mode=OneWay}"
+                                                              SelectionChanged="OnSlotStyleChanged"/>
+                                                    <Button Width="32" Height="32" Padding="4"
+                                                            AutomationProperties.Name="Set crop area"
+                                                            ToolTipService.ToolTip="Set crop area"
+                                                            Click="OnCropClick" Tag="{Binding}">
+                                                        <FontIcon Glyph="&#xE7B8;" FontSize="14"/>
+                                                    </Button>
+                                                </StackPanel>
+                                            </StackPanel>
+
+                                            <Button Grid.Column="5" Content="Remove" Click="OnRemoveSlotClick" Tag="{Binding}"
+                                                    VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Grid>
                 </ScrollViewer>
             </Grid>
         </Grid>
+
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup>
+                <VisualState x:Name="Narrow">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="0"/>
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="ContentGrid.ColumnSpacing" Value="0"/>
+                        <Setter Target="DayList.Visibility" Value="Collapsed"/>
+                        <Setter Target="NarrowDayCombo.Visibility" Value="Visible"/>
+                        <Setter Target="SelectedDayTitle.Visibility" Value="Collapsed"/>
+                    </VisualState.Setters>
+                </VisualState>
+                <VisualState x:Name="Wide">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="1280"/>
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="ContentGrid.ColumnSpacing" Value="24"/>
+                        <Setter Target="DayList.Visibility" Value="Visible"/>
+                        <Setter Target="NarrowDayCombo.Visibility" Value="Collapsed"/>
+                        <Setter Target="SelectedDayTitle.Visibility" Value="Visible"/>
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
     </Grid>
 </Page>

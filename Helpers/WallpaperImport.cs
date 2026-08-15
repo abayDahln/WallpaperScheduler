@@ -41,6 +41,12 @@ namespace WallpaperScheduler.Helpers
             }
 
             config.SaveConfig();
+
+            foreach (var item in imported)
+            {
+                await ThumbnailGenerator.EnsureThumbAsync(item);
+            }
+
             return imported;
         }
     }

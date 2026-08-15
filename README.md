@@ -6,10 +6,14 @@ overrides, and let the app swap your wallpaper automatically in the background.
 
 ## Features
 
-- **Wallpaper Library** — import, rename, preview, and delete wallpapers
-- **Weekly Schedule** — set multiple time slots per day, each with its own wallpaper
-- **Overrides** — monthly recurring overrides (e.g. every 17th) and one-time date overrides
-- **Settings** — auto-start on boot, minimize-to-tray, theme (system dark/light), wallpaper style (fit/fill/etc.)
+- **Overview** — see the current wallpaper, set a default wallpaper (import-as-default), schedule summary
+- **Weekly Schedule** — multiple time slots per day, each with its own wallpaper and style
+- **Monthly Overrides** — recurring wallpaper for a day-of-month, managed via a month calendar + per-day slots
+- **Date Overrides** — one-time wallpaper for a specific date, managed via a calendar + per-date slots
+- **Per-slot Wallpaper Style** — Fill, Fit, Stretch, Tile, Center, Span, or **Custom** (pick a crop area, fitted to your primary screen resolution)
+- **Hybrid rendering** — native wallpaper plus a Win32 frame layer (WorkerW) with crossfade transitions
+- **Responsive UI** — adaptive layouts, auto-collapsing nav pane, enforced minimum window size
+- **Settings** — auto-start on boot, minimize-to-tray, notifications, theme (system/dark/light)
 - **System Tray** — pause/resume the schedule, open the app, quick exit
 
 ## Prerequisites
@@ -40,11 +44,12 @@ commands — the project targets multiple platforms.
 ## Project Structure
 
 ```
-├── Views/          # XAML pages (Library, Weekly Schedule, Overrides, Settings)
+├── Views/          # XAML pages (Overview, Weekly, Monthly, Dates, Settings)
+│                   # + shared controls: TimeSlotRow, CropSelector
 ├── ViewModels/     # MVVM view models (CommunityToolkit.Mvvm)
-├── Services/       # Config, Scheduler, Wallpaper apply, AutoStart, Theme
+├── Services/       # Config, Scheduler, Wallpaper apply, WallpaperFrame (WorkerW), AutoStart, Theme
 ├── Models/         # Data models (AppConfig, WallpaperItem, TimeSlot, Override)
-├── Helpers/        # ScheduleResolver
+├── Helpers/        # ScheduleResolver, WallpaperImport, ThumbnailGenerator, CropHelper
 ├── Assets/         # Icons and splash screen
 ├── Properties/     # launchSettings.json
 └── documentation/  # PRD, requirements, architecture, design docs
@@ -56,7 +61,8 @@ Config and wallpapers live under `%LocalAppData%\WallpaperSchedule\`:
 
 ```
 %LocalAppData%\WallpaperSchedule\config.json    # app configuration + schedule
-%LocalAppData%\WallpaperSchedule\Wallpapers\    # imported wallpaper files
+%LocalAppData%\WallpaperSchedule\Wallpapers\    # imported wallpaper files (+ generated _custom.bmp crops)
+%LocalAppData%\WallpaperSchedule\Thumbs\        # generated thumbnails
 %LocalAppData%\WallpaperSchedule\crash.log      # unhandled exception log
 ```
 
@@ -66,3 +72,4 @@ Config and wallpapers live under `%LocalAppData%\WallpaperSchedule\`:
 - .NET 8 (`net8.0-windows10.0.19041.0`)
 - CommunityToolkit.Mvvm 8.x
 - H.NotifyIcon (system tray)
+- System.Drawing.Common (image scaling / custom crops)

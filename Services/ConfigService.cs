@@ -13,6 +13,7 @@ namespace WallpaperScheduler.Services
         );
         private static readonly string ConfigPath = Path.Combine(AppDataDir, "config.json");
         public static string WallpapersDir => Path.Combine(AppDataDir, "Wallpapers");
+        public static string ThumbsDir => Path.Combine(AppDataDir, "Thumbs");
 
         public AppConfig Config { get; private set; } = new();
 
@@ -26,6 +27,7 @@ namespace WallpaperScheduler.Services
         {
             Directory.CreateDirectory(AppDataDir);
             Directory.CreateDirectory(WallpapersDir);
+            Directory.CreateDirectory(ThumbsDir);
         }
 
         public void LoadConfig()

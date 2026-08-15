@@ -11,17 +11,20 @@ namespace WallpaperScheduler.Services
     public class SchedulerEngine
     {
         private readonly ConfigService _configService;
+        private readonly WallpaperFrameService? _frameService;
         private System.Threading.Timer? _timer;
         private string? _lastAppliedWallpaperId;
+        private string? _lastAppliedStyle;
         public bool IsPaused { get; private set; }
         public string? LastAppliedWallpaperId => _lastAppliedWallpaperId;
 
         public event EventHandler<string>? OnWallpaperChanged;
         public event EventHandler<string>? OnWallpaperSchedulerlyFailed;
 
-        public SchedulerEngine(ConfigService configService)
+        public SchedulerEngine(ConfigService configService, WallpaperFrameService? frameService = null)
         {
             _configService = configService;
+            _frameService = frameService;
             SystemEvents.PowerModeChanged += OnPowerModeChanged;
             SystemEvents.TimeChanged += OnTimeChanged;
         }
@@ -44,32 +47,49 @@ namespace WallpaperScheduler.Services
             EvaluateAndScheduleNext();
         }
 
-        public void ForceReevaluate()
+        public void ForceReevaluate(bool fresh = false, bool force = false)
         {
-            if (!IsPaused) EvaluateAndScheduleNext();
+            if (!IsPaused) EvaluateAndScheduleNext(fresh, force);
         }
 
-        public void ReapplyCurrentWallpaper()
+        public void ReapplyCurrentWallpaper(bool force = false)
         {
             if (IsPaused) return;
             DateTime now = DateTime.Now;
-            string? wallpaperId = ScheduleResolver.ResolveActiveWallpaper(_configService.Config, now, ref _lastAppliedWallpaperId);
-            if (!string.IsNullOrEmpty(wallpaperId))
+            string? fallback = _lastAppliedWallpaperId;
+            var (id, style) = ScheduleResolver.ResolveActiveWallpaper(_configService.Config, now, ref fallback);
+            if (!string.IsNullOrEmpty(id))
             {
-                ApplyById(wallpaperId);
+                ApplyById(id, style, force);
             }
         }
 
-        private void EvaluateAndScheduleNext()
+        public void OnWallpaperDeleted(string wallpaperId)
+        {
+            if (_lastAppliedWallpaperId == wallpaperId)
+            {
+                _lastAppliedWallpaperId = null;
+            }
+            ForceReevaluate();
+        }
+
+        private void EvaluateAndScheduleNext(bool fresh = false, bool force = false)
         {
             DateTime now = DateTime.Now;
-            string? wallpaperId = ScheduleResolver.ResolveActiveWallpaper(_configService.Config, now, ref _lastAppliedWallpaperId);
+            string? fallback = fresh ? null : _lastAppliedWallpaperId;
+            var (id, style) = ScheduleResolver.ResolveActiveWallpaper(_configService.Config, now, ref fallback);
 
-            if (!string.IsNullOrEmpty(wallpaperId))
+            if (!string.IsNullOrEmpty(id))
             {
-                ApplyById(wallpaperId);
+                ApplyById(id, style, force);
             }
 
+            ScheduleNextTimer();
+        }
+
+        private void ScheduleNextTimer()
+        {
+            DateTime now = DateTime.Now;
             DateTime nextEvent = ScheduleResolver.GetNextEventTime(_configService.Config, now);
             TimeSpan delay = nextEvent - now;
             if (delay < TimeSpan.FromSeconds(1)) delay = TimeSpan.FromSeconds(1);
@@ -78,17 +98,32 @@ namespace WallpaperScheduler.Services
             _timer = new System.Threading.Timer(_ => EvaluateAndScheduleNext(), null, delay, Timeout.InfiniteTimeSpan);
         }
 
-        public bool ApplyById(string wallpaperId)
+        public bool ApplyById(string wallpaperId, string? style = null, bool force = false)
         {
+            string effectiveStyle = string.IsNullOrEmpty(style)
+                ? _configService.Config.Settings.WallpaperStyle
+                : style;
+            if (!force && wallpaperId == _lastAppliedWallpaperId && effectiveStyle == _lastAppliedStyle) return true;
+
             var item = _configService.Config.WallpaperLibrary.FirstOrDefault(w => w.Id == wallpaperId);
             if (item == null) return false;
 
             string fullPath = Path.Combine(ConfigService.WallpapersDir, item.FileName);
-            bool success = WallpaperApplyService.ApplyWallpaper(fullPath, _configService.Config.Settings.WallpaperStyle);
+            string applyPath = fullPath;
+            string applyStyle = effectiveStyle;
+            if (string.Equals(applyStyle, "Custom", StringComparison.OrdinalIgnoreCase))
+            {
+                applyPath = CropHelper.GenerateCustom(item);
+                applyStyle = "Fill";
+            }
+
+            bool success = WallpaperApplyService.ApplyWallpaper(applyPath, applyStyle);
 
             if (success)
             {
                 _lastAppliedWallpaperId = wallpaperId;
+                _lastAppliedStyle = effectiveStyle;
+                _frameService?.ShowWallpaper(applyPath, applyStyle);
                 OnWallpaperChanged?.Invoke(this, item.Label);
             }
             else

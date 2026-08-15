@@ -1,7 +1,9 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.UI.Xaml;
+using WallpaperScheduler.Helpers;
 using WallpaperScheduler.Services;
 using WallpaperScheduler.ViewModels;
 
@@ -16,6 +18,7 @@ namespace WallpaperScheduler
         private Window? _window;
         public static Window? MainWindow { get; private set; }
         public ConfigService ConfigService { get; private set; } = null!;
+        public WallpaperFrameService WallpaperFrameService { get; private set; } = null!;
         public SchedulerEngine SchedulerEngine { get; private set; } = null!;
         public MainViewModel MainViewModel { get; private set; } = null!;
 
@@ -36,13 +39,15 @@ namespace WallpaperScheduler
         protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
         {
             ConfigService = new ConfigService();
-            SchedulerEngine = new SchedulerEngine(ConfigService);
+            WallpaperFrameService = new WallpaperFrameService(Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread());
+            SchedulerEngine = new SchedulerEngine(ConfigService, WallpaperFrameService);
             MainViewModel = new MainViewModel(ConfigService, SchedulerEngine);
 
             // Auto-start sync
             AutoStartService.SetAutoStart(ConfigService.Config.Settings.AutoStart);
 
             SchedulerEngine.Start();
+            _ = BackfillThumbsAsync();
 
             _window = new MainWindow();
             MainWindow = _window;
@@ -54,6 +59,18 @@ namespace WallpaperScheduler
             {
                 _window.Activate();
             }
+        }
+
+        private async Task BackfillThumbsAsync()
+        {
+            try
+            {
+                foreach (var item in ConfigService.Config.WallpaperLibrary)
+                {
+                    await ThumbnailGenerator.EnsureThumbAsync(item);
+                }
+            }
+            catch { }
         }
     }
 }

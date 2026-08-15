@@ -4,169 +4,139 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:models="using:WallpaperScheduler.Models"
     mc:Ignorable="d">
 
-    <Grid Padding="24" RowSpacing="16">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
+    <Grid>
+        <ScrollViewer>
+            <Grid Padding="32,28,32,28" MaxWidth="1304" HorizontalAlignment="Center">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="0" Spacing="4">
-            <TextBlock Text="Overview" Style="{StaticResource TitleTextBlockStyle}"/>
-            <TextBlock Text="Review your schedule and set the default wallpaper used when no slot applies."
-                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-        </StackPanel>
-
-        <Grid Grid.Row="1" ColumnSpacing="16">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-
-            <!-- Current wallpaper -->
-            <Border Grid.Column="0" Padding="16" CornerRadius="8"
-                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                    BorderThickness="1">
-                <StackPanel Spacing="10">
-                    <TextBlock Text="Current Wallpaper" Style="{StaticResource SubtitleTextBlockStyle}"/>
-                    <Border Height="110" CornerRadius="8" Background="{ThemeResource ControlFillColorSecondaryBrush}">
-                        <Image x:Name="CurrentImage" Stretch="UniformToFill" Margin="2"/>
-                    </Border>
-                    <TextBlock x:Name="CurrentLabel" TextWrapping="Wrap" FontWeight="SemiBold"/>
-                    <TextBlock x:Name="NextChangeText" FontSize="12"
+                <StackPanel Grid.Row="0" Spacing="6">
+                    <TextBlock Text="Overview" Style="{StaticResource TitleTextBlockStyle}"/>
+                    <TextBlock Text="Review your schedule and set the default wallpaper used when no slot applies."
                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                    <Button Content="Apply Now" Click="OnApplyCurrentClick" HorizontalAlignment="Left"/>
                 </StackPanel>
-            </Border>
 
-            <!-- Default wallpaper -->
-            <Border Grid.Column="1" Padding="16" CornerRadius="8"
-                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                    BorderThickness="1">
-                <StackPanel Spacing="10">
-                    <TextBlock Text="Default Wallpaper" Style="{StaticResource SubtitleTextBlockStyle}"/>
-                    <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                               Text="Used when the schedule has no wallpaper for the current time."
-                               TextWrapping="Wrap"/>
-                    <ComboBox x:Name="DefaultCombo"
-                              ItemsSource="{x:Bind ViewModel.Wallpapers, Mode=OneWay}"
-                              SelectedValuePath="Id"
-                              SelectionChanged="OnDefaultChanged"
-                              PlaceholderText="None"
-                              HorizontalAlignment="Left" MinWidth="220">
-                        <ComboBox.ItemTemplate>
-                            <DataTemplate x:DataType="models:WallpaperItem">
-                                <StackPanel Orientation="Horizontal" Spacing="8" Padding="2">
-                                    <Border Width="24" Height="24" CornerRadius="4"
-                                            Background="{ThemeResource ControlFillColorSecondaryBrush}">
-                                        <Image Source="{x:Bind Thumbnail}" Stretch="UniformToFill"/>
-                                    </Border>
-                                    <TextBlock Text="{x:Bind Label}" VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </DataTemplate>
-                        </ComboBox.ItemTemplate>
-                    </ComboBox>
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <TextBlock Text="Default:" FontSize="12" VerticalAlignment="Center"
-                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                        <TextBlock x:Name="DefaultLabelText" FontSize="12" VerticalAlignment="Center" FontWeight="SemiBold"/>
-                        <Button Content="Clear" FontSize="12" Click="OnClearDefaultClick" VerticalAlignment="Center"/>
-                    </StackPanel>
-                </StackPanel>
-            </Border>
+                <Grid Grid.Row="1" Margin="0,24,0,0" RowSpacing="20" ColumnSpacing="20">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
 
-            <!-- Schedule summary -->
-            <Border Grid.Column="2" Padding="16" CornerRadius="8"
-                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                    BorderThickness="1">
-                <StackPanel Spacing="8">
-                    <TextBlock Text="Schedule Summary" Style="{StaticResource SubtitleTextBlockStyle}"/>
-                    <TextBlock><Run Text="Wallpapers: "/><Run x:Name="StatWallpapers" FontWeight="SemiBold"/></TextBlock>
-                    <TextBlock><Run Text="Weekly slots: "/><Run x:Name="StatWeekly" FontWeight="SemiBold"/></TextBlock>
-                    <TextBlock><Run Text="Monthly overrides: "/><Run x:Name="StatMonthly" FontWeight="SemiBold"/></TextBlock>
-                    <TextBlock><Run Text="Date overrides: "/><Run x:Name="StatDates" FontWeight="SemiBold"/></TextBlock>
-                </StackPanel>
-            </Border>
-        </Grid>
-
-        <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="12" Margin="0,8,0,0">
-            <TextBlock Text="Wallpaper Library" Style="{StaticResource SubtitleTextBlockStyle}" VerticalAlignment="Center"/>
-            <TextBlock Text="Import wallpapers from the Weekly, Monthly, or Specific Date pages."
-                       FontSize="12"
-                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                       VerticalAlignment="Center"/>
-        </StackPanel>
-
-        <Grid Grid.Row="3" ColumnSpacing="20">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-
-            <ListView x:Name="WallpaperList"
-                      ItemsSource="{x:Bind ViewModel.Wallpapers, Mode=OneWay}"
-                      SelectionChanged="OnSelectionChanged"
-                      Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                      BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                      BorderThickness="1"
-                      CornerRadius="8">
-                <ListView.ItemTemplate>
-                    <DataTemplate x:DataType="models:WallpaperItem">
-                        <Grid Padding="8" ColumnSpacing="12" CornerRadius="6">
+                    <!-- Schedule summary: full width, one row tall, compact -->
+                    <StackPanel x:Name="SummarySection" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Spacing="16">
+                        <Grid ColumnSpacing="24">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="56"/>
                                 <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-
-                            <Border Grid.Column="0" Width="48" Height="48" CornerRadius="6"
-                                    Background="{ThemeResource ControlFillColorSecondaryBrush}"
-                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                    BorderThickness="1">
-                                <Image Stretch="UniformToFill" Source="{x:Bind Thumbnail}"/>
-                            </Border>
-
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                                <TextBlock Text="{x:Bind Label}" FontWeight="SemiBold"/>
+                            <StackPanel Grid.Column="0" Spacing="2">
+                                <TextBlock x:Name="StatWallpapers" FontWeight="SemiBold"
+                                           Style="{StaticResource SubtitleTextBlockStyle}"/>
                                 <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                           Text="{x:Bind FileName}"/>
+                                           Text="Wallpapers"/>
                             </StackPanel>
-
-                            <Button Grid.Column="2" Content="Apply Now" VerticalAlignment="Center"
-                                    Click="OnApplyClick" Tag="{Binding}"/>
+                            <StackPanel Grid.Column="1" Spacing="2">
+                                <TextBlock x:Name="StatWeekly" FontWeight="SemiBold"
+                                           Style="{StaticResource SubtitleTextBlockStyle}"/>
+                                <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           Text="Weekly slots"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" Spacing="2">
+                                <TextBlock x:Name="StatMonthly" FontWeight="SemiBold"
+                                           Style="{StaticResource SubtitleTextBlockStyle}"/>
+                                <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           Text="Monthly overrides"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="3" Spacing="2">
+                                <TextBlock x:Name="StatDates" FontWeight="SemiBold"
+                                           Style="{StaticResource SubtitleTextBlockStyle}"/>
+                                <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           Text="Date overrides"/>
+                            </StackPanel>
                         </Grid>
-                    </DataTemplate>
-                </ListView.ItemTemplate>
-            </ListView>
+                        <Border Height="1" Background="{ThemeResource DividerStrokeColorDefaultBrush}"/>
+                    </StackPanel>
 
-            <!-- Detail / edit pane -->
-            <StackPanel Grid.Column="1" Spacing="12" Visibility="Collapsed" x:Name="DetailPane" MinWidth="300" MaxWidth="360">
-                <Border Padding="16" CornerRadius="8"
-                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                        BorderThickness="1">
-                    <StackPanel Spacing="12">
-                        <TextBlock Text="Wallpaper Details" Style="{StaticResource SubtitleTextBlockStyle}"/>
-                        <Border Height="140" CornerRadius="8" Background="{ThemeResource ControlFillColorSecondaryBrush}">
-                            <Image x:Name="PreviewImage" Stretch="UniformToFill" Margin="2"/>
+                    <!-- Current wallpaper -->
+                    <StackPanel x:Name="CurrentSection" Grid.Row="1" Grid.Column="0" Spacing="12">
+                        <TextBlock Text="Current Wallpaper" Style="{StaticResource SubtitleTextBlockStyle}"/>
+                        <Border x:Name="CurrentImageFrame" Height="150" CornerRadius="8"
+                                Background="{ThemeResource ControlFillColorSecondaryBrush}">
+                            <Image x:Name="CurrentImage" Stretch="UniformToFill" Margin="2"/>
                         </Border>
-                        <TextBox Header="Label" x:Name="LabelBox" TextChanged="OnLabelChanged"/>
-                        <TextBlock x:Name="FileNameText" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                        <TextBlock x:Name="CurrentLabel" TextWrapping="Wrap" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                        <TextBlock x:Name="NextChangeText" FontSize="12"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                    </StackPanel>
+
+                    <!-- Default wallpaper -->
+                    <StackPanel x:Name="DefaultSection" Grid.Row="1" Grid.Column="1" Spacing="12">
+                        <TextBlock Text="Default Wallpaper" Style="{StaticResource SubtitleTextBlockStyle}"/>
+                        <Border x:Name="DefaultThumbFrame" Height="150" CornerRadius="8"
+                                Background="{ThemeResource ControlFillColorSecondaryBrush}">
+                            <Image x:Name="DefaultThumb" Stretch="UniformToFill" Margin="2"/>
+                        </Border>
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <Button Content="Apply Now" Click="OnApplyDetailClick"/>
-                            <Button Content="Delete" Click="OnDeleteDetailClick"/>
+                            <Button Content="Import Wallpaper" Click="OnImportClick"
+                                    Style="{StaticResource AccentButtonStyle}"/>
+                            <Button Content="Clear" Click="OnClearDefaultClick"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="Current:" FontSize="12" VerticalAlignment="Center"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                            <TextBlock x:Name="DefaultLabelText" FontSize="12" VerticalAlignment="Center" FontWeight="SemiBold"/>
                         </StackPanel>
                     </StackPanel>
-                </Border>
-            </StackPanel>
-        </Grid>
+                </Grid>
+
+                <VisualStateManager.VisualStateGroups>
+                    <VisualStateGroup>
+                        <VisualState x:Name="Narrow">
+                            <VisualState.StateTriggers>
+                                <AdaptiveTrigger MinWindowWidth="0"/>
+                            </VisualState.StateTriggers>
+                            <VisualState.Setters>
+                                <Setter Target="SummarySection.(Grid.Row)" Value="0"/>
+                                <Setter Target="SummarySection.(Grid.Column)" Value="0"/>
+                                <Setter Target="SummarySection.(Grid.ColumnSpan)" Value="2"/>
+                                <Setter Target="CurrentSection.(Grid.Row)" Value="1"/>
+                                <Setter Target="CurrentSection.(Grid.Column)" Value="0"/>
+                                <Setter Target="CurrentSection.(Grid.ColumnSpan)" Value="2"/>
+                                <Setter Target="DefaultSection.(Grid.Row)" Value="2"/>
+                                <Setter Target="DefaultSection.(Grid.Column)" Value="0"/>
+                                <Setter Target="DefaultSection.(Grid.ColumnSpan)" Value="2"/>
+                            </VisualState.Setters>
+                        </VisualState>
+                        <VisualState x:Name="Wide">
+                            <VisualState.StateTriggers>
+                                <AdaptiveTrigger MinWindowWidth="1200"/>
+                            </VisualState.StateTriggers>
+                            <VisualState.Setters>
+                                <Setter Target="SummarySection.(Grid.Row)" Value="0"/>
+                                <Setter Target="SummarySection.(Grid.Column)" Value="0"/>
+                                <Setter Target="SummarySection.(Grid.ColumnSpan)" Value="2"/>
+                                <Setter Target="CurrentSection.(Grid.Row)" Value="1"/>
+                                <Setter Target="CurrentSection.(Grid.Column)" Value="0"/>
+                                <Setter Target="CurrentSection.(Grid.ColumnSpan)" Value="1"/>
+                                <Setter Target="DefaultSection.(Grid.Row)" Value="1"/>
+                                <Setter Target="DefaultSection.(Grid.Column)" Value="1"/>
+                                <Setter Target="DefaultSection.(Grid.ColumnSpan)" Value="1"/>
+                            </VisualState.Setters>
+                        </VisualState>
+                    </VisualStateGroup>
+                </VisualStateManager.VisualStateGroups>
+            </Grid>
+        </ScrollViewer>
     </Grid>
 </Page>

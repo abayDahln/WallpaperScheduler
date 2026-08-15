@@ -39,18 +39,35 @@ namespace WallpaperScheduler.Views
             foreach (var wp in _configService.Config.WallpaperLibrary) Wallpapers.Add(wp);
             DataContext = this;
             DayList.SelectedIndex = 0;
+            if (DayList.SelectedIndex >= 0)
+            {
+                SelectedDayTitle.Text = Days[DayList.SelectedIndex].Name;
+                ReloadRows();
+            }
+            RefreshDaySummary();
         }
 
         private DayOfWeek SelectedDay => (DayOfWeek)DayList.SelectedIndex;
 
         private List<TimeSlot> GetSlots(DayOfWeek day) => _configService.Config.WeeklySchedule.GetDaySlots(day);
 
+        private bool _daySync;
+
         private void OnDaySelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (DayList.SelectedIndex < 0) return;
+            _daySync = true;
+            NarrowDayCombo.SelectedIndex = DayList.SelectedIndex;
+            _daySync = false;
             SelectedDayTitle.Text = Days[DayList.SelectedIndex].Name;
             CopyTargetDay.SelectedIndex = -1;
             ReloadRows();
+        }
+
+        private void OnNarrowDaySelected(object sender, SelectionChangedEventArgs e)
+        {
+            if (_daySync || NarrowDayCombo.SelectedIndex < 0) return;
+            DayList.SelectedIndex = NarrowDayCombo.SelectedIndex;
         }
 
         private void ReloadRows()
@@ -60,42 +77,84 @@ namespace WallpaperScheduler.Views
             {
                 Rows.Add(new DaySlotEditor(s, Wallpapers));
             }
+            EmptyState.Visibility = Rows.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         }
 
-        private async void OnImportClick(object sender, RoutedEventArgs e)
+        private async void OnAddSlotClick(object sender, RoutedEventArgs e)
         {
             var imported = await WallpaperImport.PickAndImportAsync(_configService);
             foreach (var wp in imported) Wallpapers.Add(wp);
-        }
+            if (imported.Count == 0) return;
 
-        private void OnAddSlotClick(object sender, RoutedEventArgs e)
-        {
+            foreach (var wp in imported)
+            {
             var slot = new TimeSlot
             {
                 Start = "00:00",
                 End = "24:00",
-                WallpaperId = Wallpapers.FirstOrDefault()?.Id ?? string.Empty
+                WallpaperId = imported[0].Id,
+                WallpaperStyle = _configService.Config.Settings.WallpaperStyle
             };
-            GetSlots(SelectedDay).Add(slot);
+                GetSlots(SelectedDay).Add(slot);
+                Rows.Add(new DaySlotEditor(slot, Wallpapers));
+            }
             SaveConfig();
-            Rows.Add(new DaySlotEditor(slot, Wallpapers));
+            EmptyState.Visibility = Visibility.Collapsed;
             RefreshDaySummary();
         }
 
-        private void OnRemoveSlotClick(object sender, RoutedEventArgs e)
+        private async void OnPickWallpaperClick(object sender, RoutedEventArgs e)
         {
-            if (sender is Button btn && btn.Tag is DaySlotEditor editor)
-            {
-                var slots = GetSlots(SelectedDay);
-                slots.Remove(editor.ToTimeSlot());
-                SaveConfig();
-                Rows.Remove(editor);
-                RefreshDaySummary();
-            }
+            if (sender is not Button btn || btn.Tag is not DaySlotEditor editor) return;
+
+            var imported = await WallpaperImport.PickAndImportAsync(_configService);
+            foreach (var wp in imported) Wallpapers.Add(wp);
+            if (imported.Count == 0) return;
+
+            editor.WallpaperId = imported[0].Id;
+            SaveConfig();
+            ReloadRows();
+            RefreshDaySummary();
         }
 
-        private void OnClearDayClick(object sender, RoutedEventArgs e)
+        private async void OnRemoveSlotClick(object sender, RoutedEventArgs e)
         {
+            if (sender is not Button btn || btn.Tag is not DaySlotEditor editor) return;
+
+            var dialog = new ContentDialog
+            {
+                Title = "Remove time slot",
+                Content = $"Remove the {editor.StartTime:hh\\:mm}\u2013{editor.EndTime:hh\\:mm} slot for {SelectedDayTitle.Text}?",
+                PrimaryButtonText = "Remove",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = XamlRoot
+            };
+            if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
+
+            var slots = GetSlots(SelectedDay);
+            slots.Remove(editor.ToTimeSlot());
+            SaveConfig();
+            Rows.Remove(editor);
+            RefreshDaySummary();
+        }
+
+        private async void OnClearDayClick(object sender, RoutedEventArgs e)
+        {
+            int count = GetSlots(SelectedDay).Count;
+            if (count == 0) return;
+
+            var dialog = new ContentDialog
+            {
+                Title = "Clear day",
+                Content = $"Remove all {count} slot(s) for {SelectedDayTitle.Text}?",
+                PrimaryButtonText = "Clear",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = XamlRoot
+            };
+            if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
+
             GetSlots(SelectedDay).Clear();
             SaveConfig();
             Rows.Clear();
@@ -125,22 +184,46 @@ namespace WallpaperScheduler.Views
             ShowMessage($"Copied {copies.Count} slot(s) to {Days[CopyTargetDay.SelectedIndex].Name}.");
         }
 
-        private void OnSlotEdited(object sender, object e)
+        private void OnStartTimeClick(object sender, RoutedEventArgs e) => PickTime(sender as Button, isEnd: false);
+
+        private void OnEndTimeClick(object sender, RoutedEventArgs e) => PickTime(sender as Button, isEnd: true);
+
+        private void PickTime(Button? btn, bool isEnd)
         {
-            if (sender is FrameworkElement fe && fe.DataContext is DaySlotEditor editor)
+            if (btn?.Tag is not DaySlotEditor editor) return;
+
+            var flyout = new TimePickerFlyout { ClockIdentifier = "24HourClock" };
+            var current = isEnd ? editor.EndTime : editor.StartTime;
+            flyout.Time = current >= TimeSpan.FromDays(1) ? TimeSpan.Zero : current;
+
+            flyout.TimePicked += (_, args) =>
             {
+                if (isEnd) editor.EndTime = args.NewTime;
+                else editor.StartTime = args.NewTime;
+                btn.Content = DaySlotEditor.FormatTime(isEnd ? editor.EndTime : editor.StartTime);
+                if (ValidateAndSave()) { }
+            };
+            flyout.ShowAt(btn);
+        }
+
+        private void OnSlotStyleChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (sender is ComboBox cb && cb.DataContext is DaySlotEditor editor
+                && cb.SelectedItem is string style && editor.WallpaperStyle != style)
+            {
+                editor.WallpaperStyle = style;
                 if (ValidateAndSave()) { }
             }
         }
 
-        private void OnWallpaperSelected(object sender, SelectionChangedEventArgs e)
+        private async void OnCropClick(object sender, RoutedEventArgs e)
         {
-            if (sender is ComboBox cb && cb.DataContext is DaySlotEditor editor)
+            if (sender is not Button btn || btn.Tag is not DaySlotEditor editor) return;
+            if (editor.Wallpaper is not WallpaperItem wp) return;
+            if (await CropHelper.EditCropAsync(XamlRoot, wp))
             {
-                var newId = cb.SelectedValue as string;
-                if (string.IsNullOrEmpty(newId) || newId == editor.WallpaperId) return;
-                editor.WallpaperId = newId;
-                OnSlotEdited(sender, e);
+                _configService.SaveConfig();
+                if (ValidateAndSave()) { }
             }
         }
 
@@ -197,7 +280,8 @@ namespace WallpaperScheduler.Views
         private void SaveConfig()
         {
             _configService.SaveConfig();
-            _schedulerEngine.ForceReevaluate();
+            bool changedToday = SelectedDay == DateTime.Now.DayOfWeek;
+            _schedulerEngine.ForceReevaluate(fresh: changedToday, force: true);
         }
 
         private void RefreshDaySummary()
@@ -254,6 +338,31 @@ namespace WallpaperScheduler.Views
             get => _slot.WallpaperId;
             set => _slot.WallpaperId = value;
         }
+
+        public WallpaperItem? Wallpaper => Wallpapers.FirstOrDefault(w => w.Id == WallpaperId);
+
+        public Microsoft.UI.Xaml.Media.ImageSource? Thumbnail => Wallpaper?.Thumbnail;
+
+        public string WallpaperLabel => Wallpaper?.Label ?? "Pick wallpaper…";
+
+        public IReadOnlyList<string> StyleOptions { get; } = new List<string> { "Fill", "Fit", "Stretch", "Tile", "Center", "Span", "Custom" };
+
+        public string WallpaperStyle
+        {
+            get => _slot.WallpaperStyle;
+            set => _slot.WallpaperStyle = value;
+        }
+
+        public string EffectiveStyle => string.IsNullOrEmpty(_slot.WallpaperStyle)
+            ? ((App)Application.Current).ConfigService.Config.Settings.WallpaperStyle
+            : _slot.WallpaperStyle;
+
+        public string StartLabel => FormatTime(StartTime);
+
+        public string EndLabel => FormatTime(EndTime);
+
+        public static string FormatTime(TimeSpan t)
+            => t >= TimeSpan.FromDays(1) ? "24:00" : t.ToString(@"hh\:mm");
 
         public TimeSpan StartTime
         {

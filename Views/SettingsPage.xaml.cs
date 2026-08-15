@@ -10,7 +10,7 @@ namespace WallpaperScheduler.Views
     public sealed partial class SettingsPage : Page
     {
         public SettingsViewModel ViewModel { get; }
-        public List<string> StyleOptions { get; } = new() { "Fill", "Fit", "Stretch", "Tile", "Center", "Span" };
+        public List<string> StyleOptions { get; } = new() { "Fill", "Fit", "Stretch", "Tile", "Center", "Span", "Custom" };
         public List<string> ThemeOptions { get; } = new() { "system", "light", "dark" };
 
         public SettingsPage()
@@ -41,7 +41,7 @@ namespace WallpaperScheduler.Views
             if (e.AddedItems.Count > 0 && e.AddedItems[0] is string style)
             {
                 ViewModel.SetWallpaperStyle(style);
-                ((App)Application.Current).SchedulerEngine.ReapplyCurrentWallpaper();
+                ((App)Application.Current).SchedulerEngine.ReapplyCurrentWallpaper(force: true);
             }
         }
 

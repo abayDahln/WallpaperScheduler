@@ -22,10 +22,23 @@ namespace WallpaperScheduler.Models
         public string Label { get; set; } = string.Empty;
         public DateTime AddedAt { get; set; } = DateTime.Now;
 
+        // Custom-style crop area, normalized 0..1 relative to the image
+        public double CropLeft { get; set; }
+        public double CropTop { get; set; }
+        public double CropWidth { get; set; } = 1;
+        public double CropHeight { get; set; } = 1;
+
+        public bool HasCustomCrop =>
+            CropWidth > 0 && CropHeight > 0
+            && (CropLeft > 0 || CropTop > 0 || CropWidth < 1 || CropHeight < 1);
+
         [JsonIgnore]
-        public string ThumbnailPath => Path.Combine(
+        public string FullPath => Path.Combine(
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "WallpaperSchedule", "Wallpapers"),
             FileName);
+
+        [JsonIgnore]
+        public string ThumbPath => WallpaperScheduler.Helpers.ThumbnailGenerator.ThumbPathFor(FileName);
 
         private Microsoft.UI.Xaml.Media.ImageSource? _thumbnail;
 
@@ -36,7 +49,8 @@ namespace WallpaperScheduler.Models
             {
                 if (_thumbnail == null)
                 {
-                    _thumbnail = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage(new Uri(ThumbnailPath))
+                    string path = File.Exists(ThumbPath) ? ThumbPath : FullPath;
+                    _thumbnail = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage(new Uri(path))
                     {
                         DecodePixelWidth = 512
                     };
@@ -51,6 +65,7 @@ namespace WallpaperScheduler.Models
         public string Start { get; set; } = "00:00"; // HH:mm
         public string End { get; set; } = "24:00";   // HH:mm or 24:00
         public string WallpaperId { get; set; } = string.Empty;
+        public string WallpaperStyle { get; set; } = string.Empty; // empty = follow global setting
 
         [JsonIgnore]
         public TimeSpan StartTimeSpan => TimeSpan.Parse(Start == "24:00" ? "23:59:59" : Start);
