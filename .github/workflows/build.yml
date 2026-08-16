@@ -4,9 +4,6 @@ on:
   push:
     branches: [main]
 
-env:
-  VERSION: v0.1
-
 jobs:
   build:
     runs-on: windows-latest
@@ -19,34 +16,20 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
-      - name: Publish (self-contained, unpackaged, win-x64)
-        run: dotnet publish WallpaperScheduler.csproj -c Release -p:Platform=x64 -r win-x64 -p:SelfContained=true -o publish/win-x64
+      - name: Publish Program (.exe Unpackaged)
+        run: dotnet publish WallpaperScheduler.csproj -c Release -p:Platform=x64 -r win-x64 -p:SelfContained=true -p:PublishSingleFile=true -p:WindowsPackageType=None -o publish_exe
 
-      - name: Zip publish output
-        run: Compress-Archive -Path publish/win-x64/* -DestinationPath "WallpaperScheduler-${{ env.VERSION }}-win-x64.zip"
+      - name: Publish Installer (.msix Packaged)
+        run: dotnet publish WallpaperScheduler.csproj -c Release -p:Platform=x64 -r win-x64 -p:GenerateAppxPackageOnBuild=true -p:AppxBundle=Never -p:AppxPackageDir="${{ github.workspace }}\publish_msix"
 
-      - name: Upload artifact
+      - name: Upload .exe Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: win-x64-build
-          path: WallpaperScheduler-${{ env.VERSION }}-win-x64.zip
+          name: wallpaper-scheduler-program-win-x64
+          path: publish_exe/WallpaperScheduler.exe
 
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Download artifact
-        uses: actions/download-artifact@v4
+      - name: Upload .msix Artifact
+        uses: actions/upload-artifact@v4
         with:
-          name: win-x64-build
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ env.VERSION }}
-          name: WallpaperScheduler ${{ env.VERSION }}
-          files: WallpaperScheduler-${{ env.VERSION }}-win-x64.zip
-          make_latest: true
-          generate_release_notes: true
+          name: wallpaper-scheduler-installer-win-x64
+          path: publish_msix/**/*.msix
