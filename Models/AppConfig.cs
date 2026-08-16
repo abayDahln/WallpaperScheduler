@@ -10,6 +10,7 @@ namespace WallpaperScheduler.Models
         public bool AutoStart { get; set; } = true;
         public bool CloseButtonMinimizesToTray { get; set; } = true;
         public bool NotifyOnWallpaperChange { get; set; } = false;
+        public bool HideTrayIcon { get; set; } = false;
         public string? DefaultWallpaperId { get; set; }
         public string ThemeOverride { get; set; } = "system"; // system, light, dark
         public string WallpaperStyle { get; set; } = "Fill"; // Fill, Fit, Stretch, Tile, Center, Span

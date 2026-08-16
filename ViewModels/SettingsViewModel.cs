@@ -19,6 +19,9 @@ namespace WallpaperScheduler.ViewModels
         private bool _notifyOnChange;
 
         [ObservableProperty]
+        private bool _hideTrayIcon;
+
+        [ObservableProperty]
         private string _wallpaperStyle = "Fill";
 
         [ObservableProperty]
@@ -32,6 +35,7 @@ namespace WallpaperScheduler.ViewModels
             AutoStart = settings.AutoStart;
             CloseMinimizesToTray = settings.CloseButtonMinimizesToTray;
             NotifyOnChange = settings.NotifyOnWallpaperChange;
+            HideTrayIcon = settings.HideTrayIcon;
             WallpaperStyle = settings.WallpaperStyle;
             Theme = settings.ThemeOverride;
         }
@@ -52,6 +56,13 @@ namespace WallpaperScheduler.ViewModels
         public void ToggleNotify()
         {
             _configService.Config.Settings.NotifyOnWallpaperChange = NotifyOnChange;
+            _configService.SaveConfig();
+        }
+
+        public void SetHideTrayIcon(bool value)
+        {
+            HideTrayIcon = value;
+            _configService.Config.Settings.HideTrayIcon = value;
             _configService.SaveConfig();
         }
 

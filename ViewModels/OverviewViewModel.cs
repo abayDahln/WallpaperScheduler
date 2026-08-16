@@ -39,12 +39,8 @@ namespace WallpaperScheduler.ViewModels
         {
             get
             {
-                string? id = _schedulerEngine.LastAppliedWallpaperId;
-                if (string.IsNullOrEmpty(id))
-                {
-                string? lastApplied = null;
-                id = ScheduleResolver.ResolveActiveWallpaper(_configService.Config, DateTime.Now, ref lastApplied).WallpaperId;
-                }
+                string? lastApplied = _schedulerEngine.LastAppliedWallpaperId;
+                string? id = ScheduleResolver.ResolveActiveWallpaper(_configService.Config, DateTime.Now, ref lastApplied).WallpaperId;
                 return string.IsNullOrEmpty(id) ? null : Wallpapers.FirstOrDefault(w => w.Id == id);
             }
         }

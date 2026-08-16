@@ -94,6 +94,7 @@ namespace WallpaperScheduler.Views
                 if (await CropHelper.EditCropAsync(XamlRoot, wp))
                 {
                     ((App)Application.Current).ConfigService.SaveConfig();
+                    Edited?.Invoke(this, EventArgs.Empty);  // triggers re-apply with the new crop
                 }
             }
         }

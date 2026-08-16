@@ -18,7 +18,6 @@ namespace WallpaperScheduler
         private Window? _window;
         public static Window? MainWindow { get; private set; }
         public ConfigService ConfigService { get; private set; } = null!;
-        public WallpaperFrameService WallpaperFrameService { get; private set; } = null!;
         public SchedulerEngine SchedulerEngine { get; private set; } = null!;
         public MainViewModel MainViewModel { get; private set; } = null!;
 
@@ -48,8 +47,7 @@ namespace WallpaperScheduler
         protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
         {
             ConfigService = new ConfigService();
-            WallpaperFrameService = new WallpaperFrameService(Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread());
-            SchedulerEngine = new SchedulerEngine(ConfigService, WallpaperFrameService);
+            SchedulerEngine = new SchedulerEngine(ConfigService);
             MainViewModel = new MainViewModel(ConfigService, SchedulerEngine);
 
             // Auto-start sync

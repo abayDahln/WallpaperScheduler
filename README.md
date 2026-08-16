@@ -11,7 +11,7 @@ overrides, and let the app swap your wallpaper automatically in the background.
 - **Monthly Overrides** — recurring wallpaper for a day-of-month, managed via a month calendar + per-day slots
 - **Date Overrides** — one-time wallpaper for a specific date, managed via a calendar + per-date slots
 - **Per-slot Wallpaper Style** — Fill, Fit, Stretch, Tile, Center, Span, or **Custom** (pick a crop area, fitted to your primary screen resolution)
-- **Hybrid rendering** — native wallpaper plus a Win32 frame layer (WorkerW) with crossfade transitions
+- **Instant apply** — wallpaper changes apply directly to the desktop (no transition overlay), efficient and stable
 - **Responsive UI** — adaptive layouts, auto-collapsing nav pane, enforced minimum window size
 - **Settings** — auto-start on boot, minimize-to-tray, notifications, theme (system/dark/light)
 - **System Tray** — pause/resume the schedule, open the app, quick exit

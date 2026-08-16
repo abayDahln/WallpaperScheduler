@@ -46,16 +46,11 @@ namespace WallpaperScheduler.Helpers
 
         private static (TimeSlot? Slot, string? WallpaperId) ResolveFromSlots(List<TimeSlot> slots, TimeSpan time, string? lastApplied, string? defaultWp)
         {
-            // Exact covering slot
+            // hanya slot yang aktif pada waktu ini yang dipakai;
+            // kalau tidak ada slot aktif -> null (caller pakai default wallpaper)
             var matchingSlot = slots.FirstOrDefault(s => s.StartTimeSpan <= time && time < s.EndTimeSpan);
             if (matchingSlot != null) return (matchingSlot, matchingSlot.WallpaperId);
-
-            // Gap fallback: find last ended slot earlier today
-            var passedSlot = slots.Where(s => s.EndTimeSpan <= time).OrderByDescending(s => s.EndTimeSpan).FirstOrDefault();
-            if (passedSlot != null) return (passedSlot, passedSlot.WallpaperId);
-
-            // Before first slot gap: last applied state or default
-            return (null, lastApplied ?? defaultWp);
+            return (null, null);
         }
 
         public static DateTime GetNextEventTime(AppConfig config, DateTime now)

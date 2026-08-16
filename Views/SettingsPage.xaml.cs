@@ -36,6 +36,16 @@ namespace WallpaperScheduler.Views
             ViewModel.ToggleNotify();
         }
 
+        private void OnHideTrayToggled(object sender, RoutedEventArgs e)
+        {
+            bool hide = sender is ToggleSwitch ts && ts.IsOn;
+            ViewModel.SetHideTrayIcon(hide);
+            if (App.MainWindow is MainWindow mw)
+            {
+                mw.ApplyTrayIconVisibility(hide);
+            }
+        }
+
         private void OnStyleChanged(object sender, SelectionChangedEventArgs e)
         {
             if (e.AddedItems.Count > 0 && e.AddedItems[0] is string style)

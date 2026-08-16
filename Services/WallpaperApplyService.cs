@@ -1,4 +1,5 @@
 using System;
+using System.Drawing;
 using System.IO;
 using System.Runtime.InteropServices;
 using Microsoft.Win32;
@@ -62,6 +63,10 @@ namespace WallpaperScheduler.Services
         {
             if (!File.Exists(filePath)) return false;
 
+            // pre-scale large images to screen size so Windows applies fast (no long black screen);
+            // the scaled file is saved persistently (Windows keeps the path for next boot)
+            string? prescaled = PreScaleToScreen(filePath);
+            string applyPath = prescaled ?? filePath;
             try
             {
                 var manager = (IDesktopWallpaper)new DesktopWallpaperClass();
@@ -81,7 +86,7 @@ namespace WallpaperScheduler.Services
                 }
 
                 manager.SetWallpaperOptions(position);
-                manager.SetWallpaper(null, filePath);
+                manager.SetWallpaper(null, applyPath);
                 return true;
             }
             catch
@@ -89,13 +94,49 @@ namespace WallpaperScheduler.Services
                 try
                 {
                     SetWallpaperStyleInRegistry(style);
-                    int result = SystemParametersInfo(SPI_SETDESKWALLPAPER, 0, filePath, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
+                    int result = SystemParametersInfo(SPI_SETDESKWALLPAPER, 0, applyPath, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
                     return result != 0;
                 }
                 catch
                 {
                     return false;
                 }
+            }
+        }
+
+        /// <summary>
+        /// Downscales a wallpaper to the virtual screen size if it is much larger,
+        /// saving a persistent BMP next to the source (Windows keeps the path for the next boot).
+        /// </summary>
+        private static string? PreScaleToScreen(string sourcePath)
+        {
+            try
+            {
+                int sw = Math.Max(1, GetSystemMetrics(SM_CXVIRTUALSCREEN));
+                int sh = Math.Max(1, GetSystemMetrics(SM_CYVIRTUALSCREEN));
+
+                using var src = new Bitmap(sourcePath);
+                if (src.Width <= sw && src.Height <= sh) return null; // small enough, no pre-scale
+
+                double scale = Math.Min((double)sw / src.Width, (double)sh / src.Height);
+                int w = Math.Max(1, (int)Math.Round(src.Width * scale));
+                int h = Math.Max(1, (int)Math.Round(src.Height * scale));
+
+                string dest = Path.Combine(
+                    ConfigService.WallpapersDir,
+                    Path.GetFileNameWithoutExtension(sourcePath) + "_prescale.bmp");
+                if (File.Exists(dest)) return dest; // reuse persistent copy
+
+                using var outBmp = new Bitmap(w, h);
+                using var g = System.Drawing.Graphics.FromImage(outBmp);
+                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                g.DrawImage(src, 0, 0, w, h);
+                outBmp.Save(dest, System.Drawing.Imaging.ImageFormat.Bmp);
+                return dest;
+            }
+            catch
+            {
+                return null; // fall back to applying the original
             }
         }
 

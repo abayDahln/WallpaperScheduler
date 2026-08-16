@@ -82,13 +82,10 @@ Perubahan pada slot yang sedang aktif (hari/tanggal hari ini) langsung memicu
 re-evaluate **force** — wallpaper aktif di-apply ulang kalau wallpaper/style-nya
 berubah, tanpa menunggu event berikutnya.
 
-## 6. Wallpaper Apply Layer & Transition Effects
+## 6. Wallpaper Apply Layer
 
 - **Penyimpanan Gambar**: Saat import, file gambar **disalin** ke `%LOCALAPPDATA%\WallpaperSchedule\Wallpapers\` dengan nama acak (`{guid}{ext}`) dan direferensikan lewat `FileName`. Path lokal dipakai supaya file tidak hilang kalau file asli user dipindah/hapus. Thumbnail digenerate otomatis ke `%LOCALAPPDATA%\WallpaperSchedule\Thumbs\{id}.jpg`.
-- **Hybrid Render (base + frame)**:
-  - **Native wallpaper (base layer)**: di-set via `IDesktopWallpaper` (COM) atau fallback `SystemParametersInfo(SPI_SETDESKWALLPAPER)`. Ini lapisan dasar yang selalu benar walaupun frame gagal attach.
-  - **Frame layer (di atas native, di belakang ikon desktop)**: `WallpaperFrameService` membuat raw Win32 child window yang di-parent ke `WorkerW` (teknik yang sama dengan Wallpaper Engine/Lively, via pesan `0x052C` ke Progman). GDI+ menggambar gambar wallpaper di window ini. Kenapa raw Win32 dan bukan XAML: reparenting WinUI 3 Window tidak didukung, dan `DesktopWindowXamlSource` butuh parent HWND satu thread — keduanya tidak cocok dengan WorkerW milik explorer.
-  - **Transisi**: saat wallpaper berganti, frame melakukan crossfade — gambar lama fade-out bersamaan gambar baru fade-in selama ±500ms (DispatcherTimer, alpha naik bertahap). Native wallpaper di-set dulu sebagai base, frame menimpa dengan animasi di atasnya.
+- **Apply (flat, tanpa animasi)**: wallpaper di-set langsung via `IDesktopWallpaper` (COM) atau fallback `SystemParametersInfo(SPI_SETDESKWALLPAPER)`. Perubahan bersifat instan — tidak ada overlay/transisi.
 - **System API**: Menggunakan P/Invoke ke `IDesktopWallpaper` atau `SystemParametersInfo` dengan flag `SPI_SETDESKWALLPAPER` agar perubahan wallpaper tersimpan di sistem Windows.
 - **Wallpaper Style**: Style efektif per slot — `TimeSlot.WallpaperStyle` (kosong = ikuti setting global). Style (Fill/Fit/Stretch/Tile/Center/Span) diset di registry `HKCU\Control Panel\Desktop` sebelum menerapkan wallpaper baru.
 - **Custom Style**: Kalau style efektif = `Custom`, `CropHelper.GenerateCustom` memotong area crop tersimpan di `WallpaperItem` (ternormalisasi 0–1) dari gambar sumber, men-skalanya ke **resolusi layar utama** (`GetSystemMetrics SM_CXSCREEN/SM_CYSCREEN`), menyimpan hasil ke `{id}_custom.bmp`, lalu diterapkan sebagai `Fill`. Area crop dipilih user lewat `CropSelector` (drag kotak & resize via pojok).
@@ -135,7 +132,6 @@ WallpaperScheduler/
 ├── Services/
 │   ├── SchedulerEngine.cs           # background timer logic (section 4)
 │   ├── WallpaperApplyService.cs     # IDesktopWallpaper / SystemParametersInfo
-│   ├── WallpaperFrameService.cs     # WorkerW frame layer + crossfade
 │   ├── ConfigService.cs             # load/save JSON (atomic), in-memory model
 │   ├── ThemeService.cs              # apply app theme (system override)
 │   └── AutoStartService.cs          # registry Run key management

@@ -132,7 +132,7 @@ namespace WallpaperScheduler.Helpers
             var dialogBox = new StackPanel
             {
                 Padding = new Thickness(24, 20, 24, 16),
-                Background = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["CardBackgroundFillColorDefaultBrush"],
+                Background = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["SolidBackgroundFillColorBaseBrush"],
                 BorderBrush = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["CardStrokeColorDefaultBrush"],
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(8),

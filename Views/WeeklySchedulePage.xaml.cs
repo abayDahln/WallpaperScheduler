@@ -231,16 +231,16 @@ namespace WallpaperScheduler.Views
                 var conflicts = FindConflicts(editor);
                 if (conflicts.Count > 0)
                 {
-                    // invalid input -> cancel the change and highlight the conflicting slot(s)
+                    // konflik -> batalkan perubahan waktu
                     editor.StartTime = oldStart;
                     editor.EndTime = oldEnd;
                     btn.Content = DaySlotEditor.FormatTime(isEnd ? editor.EndTime : editor.StartTime);
                     foreach (var c in conflicts) c.HasError = true;
-                    ShowMessage(BuildConflictMessage(editor, conflicts));
                     return;
                 }
 
-                editor.HasError = false;
+                ClearErrors();
+                btn.Content = DaySlotEditor.FormatTime(isEnd ? editor.EndTime : editor.StartTime);
                 if (ValidateAndSave()) { }
             };
             flyout.ShowAt(btn);
@@ -268,15 +268,6 @@ namespace WallpaperScheduler.Views
                 }
             }
             return conflicts;
-        }
-
-        private static string BuildConflictMessage(DaySlotEditor edited, List<DaySlotEditor> conflicts)
-        {
-            if (conflicts.Count == 1)
-                return $"Invalid time: end time must be later than start time ({DaySlotEditor.FormatTime(edited.StartTime)}\u2013{DaySlotEditor.FormatTime(edited.EndTime)}).";
-            var names = string.Join(", ", conflicts.Select(c =>
-                $"{DaySlotEditor.FormatTime(c.StartTime)}\u2013{DaySlotEditor.FormatTime(c.EndTime)}"));
-            return $"Time slots must not overlap: {names}. Set each slot to its own range (e.g. 08:00\u201312:00, then 12:00\u201317:00).";
         }
 
         private void ClearErrors()

@@ -71,6 +71,20 @@ namespace WallpaperScheduler
             SizeWindow();
             SetMinSize();
             AppWindow.Changed += OnAppWindowChanged;
+            ApplyTrayIconVisibility(app.ConfigService.Config.Settings.HideTrayIcon);
+        }
+
+        public void ApplyTrayIconVisibility(bool hide)
+        {
+            if (hide)
+            {
+                TrayIcon.IconSource = null;
+            }
+            else if (TrayIcon.IconSource == null)
+            {
+                TrayIcon.IconSource = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage(new Uri("ms-appx:///Assets/AppIcon.ico"));
+                TrayIcon.ForceCreate();
+            }
         }
 
         private double DpiScale() => GetDpiForWindow(Win32Interop.GetWindowFromWindowId(AppWindow.Id)) / 96.0;

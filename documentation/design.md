@@ -144,7 +144,6 @@ sequenceDiagram
     participant Resolver as ScheduleResolver
     participant Config as ConfigService
     participant Wallpaper as WallpaperApplyService
-    participant Frame as WallpaperFrameService
     participant Win32 as Windows API
 
     Timer->>Resolver: ResolveActiveWallpaper(now)
@@ -160,7 +159,6 @@ sequenceDiagram
         end
         Wallpaper->>Win32: IDesktopWallpaper / SystemParametersInfo(SPI_SETDESKWALLPAPER)
         Wallpaper-->>Timer: sukses, update "last applied state" (id + style)
-        Timer->>Frame: ShowWallpaper(path, style) → crossfade ±500ms (WorkerW frame)
         else file hilang
             Wallpaper-->>Timer: gagal
             Timer->>Timer: tampilkan notifikasi tray, skip

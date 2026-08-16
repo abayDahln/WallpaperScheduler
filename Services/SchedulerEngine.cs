@@ -12,7 +12,6 @@ namespace WallpaperScheduler.Services
     public class SchedulerEngine
     {
         private readonly ConfigService _configService;
-        private readonly WallpaperFrameService? _frameService;
         private readonly object _applyLock = new();
         private System.Threading.Timer? _timer;
         private string? _lastAppliedWallpaperId;
@@ -23,10 +22,9 @@ namespace WallpaperScheduler.Services
         public event EventHandler<string>? OnWallpaperChanged;
         public event EventHandler<string>? OnWallpaperSchedulerlyFailed;
 
-        public SchedulerEngine(ConfigService configService, WallpaperFrameService? frameService = null)
+        public SchedulerEngine(ConfigService configService)
         {
             _configService = configService;
-            _frameService = frameService;
             SystemEvents.PowerModeChanged += OnPowerModeChanged;
             SystemEvents.TimeChanged += OnTimeChanged;
         }
@@ -131,6 +129,7 @@ namespace WallpaperScheduler.Services
             string effectiveStyle = string.IsNullOrEmpty(style)
                 ? _configService.Config.Settings.WallpaperStyle
                 : style;
+            // no actual change -> skip re-apply unless forced (e.g. custom crop changed)
             if (!force && wallpaperId == _lastAppliedWallpaperId && effectiveStyle == _lastAppliedStyle) return true;
 
             var item = _configService.Config.WallpaperLibrary.FirstOrDefault(w => w.Id == wallpaperId);
@@ -156,7 +155,6 @@ namespace WallpaperScheduler.Services
             {
                 _lastAppliedWallpaperId = wallpaperId;
                 _lastAppliedStyle = effectiveStyle;
-                _frameService?.ShowWallpaper(applyPath, applyStyle);
                 OnWallpaperChanged?.Invoke(this, item.Label);
             }
             else

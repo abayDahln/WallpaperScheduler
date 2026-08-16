@@ -64,10 +64,6 @@ namespace WallpaperScheduler.Services
             File.Move(tmp, ConfigPath, overwrite: true);
         }
 
-        private static readonly JsonSerializerOptions JsonOptions = new()
-        {
-            WriteIndented = true,
-            PropertyNameCaseInsensitive = true
-        };
+        private static readonly JsonSerializerOptions JsonOptions = new(AppConfigJsonContext.Default.Options);
     }
 }

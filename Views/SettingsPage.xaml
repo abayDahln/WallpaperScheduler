@@ -20,6 +20,7 @@
             <ToggleSwitch Header="Auto-start on boot" IsOn="{x:Bind ViewModel.AutoStart, Mode=TwoWay}" Toggled="OnAutoStartToggled"/>
             <ToggleSwitch Header="Minimize to tray on close" IsOn="{x:Bind ViewModel.CloseMinimizesToTray, Mode=TwoWay}" Toggled="OnCloseMinimizesToggled"/>
             <ToggleSwitch Header="Notify on wallpaper change" IsOn="{x:Bind ViewModel.NotifyOnChange, Mode=TwoWay}" Toggled="OnNotifyToggled"/>
+            <ToggleSwitch Header="Hide tray icon" IsOn="{x:Bind ViewModel.HideTrayIcon, Mode=TwoWay}" Toggled="OnHideTrayToggled"/>
         </StackPanel>
 
         <StackPanel Grid.Row="2" Spacing="8">
