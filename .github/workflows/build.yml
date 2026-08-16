@@ -20,7 +20,7 @@ jobs:
         run: dotnet publish WallpaperScheduler.csproj -c Release -p:Platform=x64 -r win-x64 -p:SelfContained=true -p:PublishSingleFile=true -p:WindowsPackageType=None -o publish_exe
 
       - name: Publish Installer (.msix Packaged)
-        run: dotnet publish WallpaperScheduler.csproj -c Release -p:Platform=x64 -r win-x64 -p:GenerateAppxPackageOnBuild=true -p:WindowsPackageType=MSIX -p:AppxBundle=Never -p:AppxPackageDir="${{ github.workspace }}\publish_msix"
+        run: dotnet publish WallpaperScheduler.csproj -c Release -p:Platform=x64 -r win-x64 -p:GenerateAppxPackageOnBuild=true -p:WindowsPackageType=MSIX -p:AppxBundle=Never
 
       - name: Upload .exe Artifact
         uses: actions/upload-artifact@v4
@@ -32,4 +32,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: wallpaper-scheduler-installer-win-x64
-          path: publish_msix/**/*.msix
+          path: "**/*.msix"
