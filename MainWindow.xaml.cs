@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Runtime.InteropServices;
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
@@ -72,6 +73,17 @@ namespace WallpaperScheduler
             SetMinSize();
             AppWindow.Changed += OnAppWindowChanged;
             ApplyTrayIconVisibility(app.ConfigService.Config.Settings.HideTrayIcon);
+            SetWindowIcon();
+        }
+
+        private void SetWindowIcon()
+        {
+            try
+            {
+                string iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "AppIcon.ico");
+                if (File.Exists(iconPath)) AppWindow.SetIcon(iconPath);
+            }
+            catch { }
         }
 
         public void ApplyTrayIconVisibility(bool hide)
