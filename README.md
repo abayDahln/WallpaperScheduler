@@ -1,5 +1,7 @@
 # Wallpaper Scheduler
 
+![Build](https://github.com/abayDahln/WallpaperScheduler/actions/workflows/build.yml/badge.svg)
+
 WinUI 3 desktop app for scheduled wallpaper rotation on Windows 11. Set a
 weekly schedule with multiple time slots per day, add recurring or one-time
 overrides, and let the app swap your wallpaper automatically in the background.

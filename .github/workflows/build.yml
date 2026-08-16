@@ -1,0 +1,58 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+
+env:
+  VERSION: v0.1
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore WallpaperScheduler.sln -p:Platform=x64
+
+      - name: Build (Release)
+        run: dotnet build WallpaperScheduler.sln -c Release -p:Platform=x64 --no-restore
+
+      - name: Publish (self-contained, unpackaged, win-x64)
+        run: dotnet publish WallpaperScheduler.sln -c Release -p:Platform=x64 -r win-x64 -p:SelfContained=true -o publish/win-x64 --no-restore --no-build
+
+      - name: Zip publish output
+        run: Compress-Archive -Path publish/win-x64/* -DestinationPath "WallpaperScheduler-${{ env.VERSION }}-win-x64.zip"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: win-x64-build
+          path: WallpaperScheduler-${{ env.VERSION }}-win-x64.zip
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: win-x64-build
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ env.VERSION }}
+          target_commitish: ${{ github.sha }}
+          name: WallpaperScheduler ${{ env.VERSION }}
+          files: WallpaperScheduler-${{ env.VERSION }}-win-x64.zip
+          make_latest: true
