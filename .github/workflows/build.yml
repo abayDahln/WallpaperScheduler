@@ -49,10 +49,10 @@ jobs:
           name: win-x64-build
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.VERSION }}
-          target_commitish: ${{ github.sha }}
           name: WallpaperScheduler ${{ env.VERSION }}
           files: WallpaperScheduler-${{ env.VERSION }}-win-x64.zip
           make_latest: true
+          generate_release_notes: true
