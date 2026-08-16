@@ -19,14 +19,8 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
-      - name: Restore
-        run: dotnet restore WallpaperScheduler.sln -p:Platform=x64
-
-      - name: Build (Release)
-        run: dotnet build WallpaperScheduler.sln -c Release -p:Platform=x64 -r win-x64 --no-restore
-
       - name: Publish (self-contained, unpackaged, win-x64)
-        run: dotnet publish WallpaperScheduler/WallpaperScheduler.sln -c Release -p:Platform=x64 -r win-x64 -p:SelfContained=true -o publish/win-x64 --no-restore
+        run: dotnet publish WallpaperScheduler.csproj -c Release -p:Platform=x64 -r win-x64 -p:SelfContained=true -o publish/win-x64
 
       - name: Zip publish output
         run: Compress-Archive -Path publish/win-x64/* -DestinationPath "WallpaperScheduler-${{ env.VERSION }}-win-x64.zip"
