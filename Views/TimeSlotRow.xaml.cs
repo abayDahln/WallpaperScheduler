@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using WallpaperScheduler.Helpers;
 using WallpaperScheduler.Models;
@@ -16,11 +18,14 @@ namespace WallpaperScheduler.Views
         private TimeSlot _slot = new();
         private ObservableCollection<WallpaperItem> _wallpapers = new();
         private bool _settingStyle;
+        private bool _wallpaperMissing;
 
         public event EventHandler? Edited;
         public event EventHandler? RemoveRequested;
 
         public IReadOnlyList<string> StyleOptions { get; } = new List<string> { "Fill", "Fit", "Stretch", "Tile", "Center", "Span", "Custom" };
+
+        public bool WallpaperMissing => _wallpaperMissing;
 
         public TimeSlotRow()
         {
@@ -33,17 +38,27 @@ namespace WallpaperScheduler.Views
         {
             _slot = slot;
             _wallpapers = wallpapers;
+            RefreshWallpaperState();
             _settingStyle = true;
-            StyleCombo.SelectedItem = EffectiveStyle;
+            StyleCombo.SelectedItem = StyleCombo.Items.Cast<ComboBoxItem>().FirstOrDefault(i => string.Equals(i.Content as string, EffectiveStyle, StringComparison.OrdinalIgnoreCase));
             _settingStyle = false;
             Bindings.Update();
         }
 
         private WallpaperItem? CurrentWallpaper => _wallpapers.FirstOrDefault(w => w.Id == _slot.WallpaperId);
 
+        public void RefreshWallpaperState()
+        {
+            _wallpaperMissing = CurrentWallpaper == null || !File.Exists(CurrentWallpaper.FullPath);
+            ErrOverlay.Visibility = _wallpaperMissing ? Visibility.Visible : Visibility.Collapsed;
+            Bindings.Update();
+        }
+
         public ImageSource? WallpaperThumbnail => CurrentWallpaper?.Thumbnail;
 
-        public string WallpaperLabel => CurrentWallpaper?.Label ?? "Pick wallpaper…";
+        public string WallpaperLabel => _wallpaperMissing
+            ? "Missing wallpaper"
+            : (CurrentWallpaper?.Label ?? "Pick wallpaper…");
 
         public string StartLabel => FormatTime(_slot.StartTimeSpan);
 
@@ -58,7 +73,8 @@ namespace WallpaperScheduler.Views
 
         private async void OnStyleChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (_settingStyle || StyleCombo.SelectedItem is not string style) return;
+            if (_settingStyle) return;
+            if (StyleCombo.SelectedItem is not ComboBoxItem item || item.Content is not string style) return;
             if (style == _slot.WallpaperStyle) return;
             _slot.WallpaperStyle = style;
             if (string.Equals(style, "Custom", StringComparison.OrdinalIgnoreCase) && CurrentWallpaper is WallpaperItem wp)
@@ -69,6 +85,17 @@ namespace WallpaperScheduler.Views
                 }
             }
             Edited?.Invoke(this, EventArgs.Empty);
+        }
+
+        private async void OnCustomStyleTapped(object sender, TappedRoutedEventArgs e)
+        {
+            if (string.Equals(_slot.WallpaperStyle, "Custom", StringComparison.OrdinalIgnoreCase) && CurrentWallpaper is WallpaperItem wp)
+            {
+                if (await CropHelper.EditCropAsync(XamlRoot, wp))
+                {
+                    ((App)Application.Current).ConfigService.SaveConfig();
+                }
+            }
         }
 
         private void OnStartClick(object sender, RoutedEventArgs e) => PickTime(StartBtn, isEnd: false);
@@ -83,7 +110,7 @@ namespace WallpaperScheduler.Views
             flyout.TimePicked += (_, args) =>
             {
                 var t = args.NewTime;
-                if (isEnd) _slot.End = t == TimeSpan.FromDays(1) ? "24:00" : t.ToString(@"hh\:mm");
+                if (isEnd) _slot.End = t == TimeSpan.FromDays(1) || t == TimeSpan.Zero ? "24:00" : t.ToString(@"hh\:mm");
                 else _slot.Start = t.ToString(@"hh\:mm");
                 Bindings.Update();
                 Edited?.Invoke(this, EventArgs.Empty);
@@ -98,7 +125,7 @@ namespace WallpaperScheduler.Views
             foreach (var wp in imported) _wallpapers.Add(wp);
             if (imported.Count == 0) return;
             _slot.WallpaperId = imported[0].Id;
-            Bindings.Update();
+            RefreshWallpaperState();
             Edited?.Invoke(this, EventArgs.Empty);
         }
 

@@ -34,6 +34,15 @@ namespace WallpaperScheduler
                 }
                 catch { }
             };
+            AppDomain.CurrentDomain.UnhandledException += (_, e) =>
+            {
+                try
+                {
+                    File.AppendAllText(CrashLogPath,
+                        $"[{DateTime.Now:o}] BACKGROUND {e.ExceptionObject}\n\n");
+                }
+                catch { }
+            };
         }
 
         protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)

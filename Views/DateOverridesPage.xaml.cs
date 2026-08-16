@@ -108,26 +108,41 @@ namespace WallpaperScheduler.Views
             if (imported.Count == 0) return;
 
             string dateStr = _selectedDate.ToString("yyyy-MM-dd");
-            foreach (var wp in imported)
+            var ov = GetOverride(dateStr);
+            if (ov == null)
             {
+                ov = new DateOverride
+                {
+                    Date = dateStr,
+                    Label = _selectedDate.ToString("dd MMM yyyy"),
+                    Slots = new()
+                };
+                _configService.Config.DateOverrides.Add(ov);
+            }
+
+            // start after the last existing slot so new slots never overlap
+            TimeSpan nextStart = TimeSpan.Zero;
+            foreach (var s in ov.Slots)
+                if (s.EndTimeSpan > nextStart) nextStart = s.EndTimeSpan;
+            if (nextStart >= TimeSpan.FromDays(1))
+            {
+                ShowMessage("This date is already fully scheduled. Remove a slot first.");
+                return;
+            }
+            TimeSpan free = TimeSpan.FromDays(1) - nextStart;
+            TimeSpan each = free / imported.Count;
+            for (int i = 0; i < imported.Count; i++)
+            {
+                var wp = imported[i];
+                TimeSpan start = nextStart + each * i;
+                TimeSpan end = i == imported.Count - 1 ? TimeSpan.FromDays(1) : nextStart + each * (i + 1);
                 var slot = new TimeSlot
                 {
-                    Start = "00:00",
-                    End = "24:00",
+                    Start = start.ToString(@"hh\:mm"),
+                    End = end == TimeSpan.FromDays(1) ? "24:00" : end.ToString(@"hh\:mm"),
                     WallpaperId = wp.Id,
                     WallpaperStyle = _configService.Config.Settings.WallpaperStyle
                 };
-                var ov = GetOverride(dateStr);
-                if (ov == null)
-                {
-                    ov = new DateOverride
-                    {
-                        Date = dateStr,
-                        Label = _selectedDate.ToString("dd MMM yyyy"),
-                        Slots = new()
-                    };
-                    _configService.Config.DateOverrides.Add(ov);
-                }
                 ov.Slots.Add(slot);
             }
 

@@ -6,11 +6,17 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <Border Padding="12" CornerRadius="8"
-            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-            BorderThickness="1">
-        <Grid ColumnSpacing="16">
+    <Grid>
+        <Border x:Name="ErrOverlay" CornerRadius="8" BorderThickness="2"
+                BorderBrush="{ThemeResource SystemFillColorCriticalBrush}"
+                Background="{ThemeResource SystemFillColorCriticalBrush}"
+                Opacity="0.18"
+                Visibility="Collapsed"/>
+        <Border Padding="12" CornerRadius="8"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1">
+            <Grid ColumnSpacing="16">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
@@ -50,12 +56,20 @@
 
             <StackPanel Grid.Column="3" Spacing="4">
                 <TextBlock Text="Style" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                <ComboBox x:Name="StyleCombo" ItemsSource="{x:Bind StyleOptions}" Width="110" Height="32"
-                          SelectionChanged="OnStyleChanged"/>
+                <ComboBox x:Name="StyleCombo" Width="110" Height="32" SelectionChanged="OnStyleChanged">
+                    <ComboBoxItem Content="Fill"/>
+                    <ComboBoxItem Content="Fit"/>
+                    <ComboBoxItem Content="Stretch"/>
+                    <ComboBoxItem Content="Tile"/>
+                    <ComboBoxItem Content="Center"/>
+                    <ComboBoxItem Content="Span"/>
+                    <ComboBoxItem Content="Custom" Tapped="OnCustomStyleTapped"/>
+                </ComboBox>
             </StackPanel>
 
             <Button x:Name="RemoveBtn" Grid.Column="5" Content="Remove" VerticalAlignment="Center"
                     Click="OnRemoveClick"/>
-        </Grid>
-    </Border>
+            </Grid>
+        </Border>
+    </Grid>
 </UserControl>

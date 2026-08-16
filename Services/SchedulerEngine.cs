@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Win32;
 using WallpaperScheduler.Helpers;
 using WallpaperScheduler.Services;
@@ -12,6 +13,7 @@ namespace WallpaperScheduler.Services
     {
         private readonly ConfigService _configService;
         private readonly WallpaperFrameService? _frameService;
+        private readonly object _applyLock = new();
         private System.Threading.Timer? _timer;
         private string? _lastAppliedWallpaperId;
         private string? _lastAppliedStyle;
@@ -32,7 +34,7 @@ namespace WallpaperScheduler.Services
         public void Start()
         {
             IsPaused = false;
-            EvaluateAndScheduleNext();
+            RunSafely(() => EvaluateAndScheduleNext());
         }
 
         public void Pause()
@@ -44,23 +46,63 @@ namespace WallpaperScheduler.Services
         public void Resume()
         {
             IsPaused = false;
-            EvaluateAndScheduleNext();
+            RunSafely(() => EvaluateAndScheduleNext());
         }
 
         public void ForceReevaluate(bool fresh = false, bool force = false)
         {
-            if (!IsPaused) EvaluateAndScheduleNext(fresh, force);
+            if (IsPaused) return;
+            _ = Task.Run(() => RunSafely(() => EvaluateAndScheduleNext(fresh, force)));
         }
 
         public void ReapplyCurrentWallpaper(bool force = false)
         {
             if (IsPaused) return;
-            DateTime now = DateTime.Now;
-            string? fallback = _lastAppliedWallpaperId;
-            var (id, style) = ScheduleResolver.ResolveActiveWallpaper(_configService.Config, now, ref fallback);
-            if (!string.IsNullOrEmpty(id))
+            _ = Task.Run(() => RunSafely(() =>
             {
-                ApplyById(id, style, force);
+                DateTime now = DateTime.Now;
+                string? fallback = _lastAppliedWallpaperId;
+                var (id, style) = ScheduleResolver.ResolveActiveWallpaper(_configService.Config, now, ref fallback);
+                if (!string.IsNullOrEmpty(id))
+                {
+                    ApplyById(id, style, force);
+                }
+            }));
+        }
+
+        private void RunSafely(Action action)
+        {
+            try
+            {
+                action();
+            }
+            catch (Exception ex)
+            {
+                try
+                {
+                    File.AppendAllText(Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                        "WallpaperSchedule", "crash.log"),
+                        $"[{DateTime.Now:o}] {ex}\n\n");
+                }
+                catch { }
+            }
+        }
+
+        private void EvaluateAndScheduleNext(bool fresh = false, bool force = false)
+        {
+            lock (_applyLock)
+            {
+                DateTime now = DateTime.Now;
+                string? fallback = fresh ? null : _lastAppliedWallpaperId;
+                var (id, style) = ScheduleResolver.ResolveActiveWallpaper(_configService.Config, now, ref fallback);
+
+                if (!string.IsNullOrEmpty(id))
+                {
+                    ApplyById(id, style, force);
+                }
+
+                ScheduleNextTimer();
             }
         }
 
@@ -73,20 +115,6 @@ namespace WallpaperScheduler.Services
             ForceReevaluate();
         }
 
-        private void EvaluateAndScheduleNext(bool fresh = false, bool force = false)
-        {
-            DateTime now = DateTime.Now;
-            string? fallback = fresh ? null : _lastAppliedWallpaperId;
-            var (id, style) = ScheduleResolver.ResolveActiveWallpaper(_configService.Config, now, ref fallback);
-
-            if (!string.IsNullOrEmpty(id))
-            {
-                ApplyById(id, style, force);
-            }
-
-            ScheduleNextTimer();
-        }
-
         private void ScheduleNextTimer()
         {
             DateTime now = DateTime.Now;
@@ -95,7 +123,7 @@ namespace WallpaperScheduler.Services
             if (delay < TimeSpan.FromSeconds(1)) delay = TimeSpan.FromSeconds(1);
 
             _timer?.Dispose();
-            _timer = new System.Threading.Timer(_ => EvaluateAndScheduleNext(), null, delay, Timeout.InfiniteTimeSpan);
+            _timer = new System.Threading.Timer(_ => RunSafely(() => EvaluateAndScheduleNext()), null, delay, Timeout.InfiniteTimeSpan);
         }
 
         public bool ApplyById(string wallpaperId, string? style = null, bool force = false)
@@ -113,8 +141,13 @@ namespace WallpaperScheduler.Services
             string applyStyle = effectiveStyle;
             if (string.Equals(applyStyle, "Custom", StringComparison.OrdinalIgnoreCase))
             {
-                applyPath = CropHelper.GenerateCustom(item);
-                applyStyle = "Fill";
+                var customPath = CropHelper.GenerateCustom(item);
+                if (customPath != null)
+                {
+                    applyPath = customPath;
+                    applyStyle = "Fill";
+                }
+                // custom crop failed -> fall back to the original image (applies as Fill-ish)
             }
 
             bool success = WallpaperApplyService.ApplyWallpaper(applyPath, applyStyle);

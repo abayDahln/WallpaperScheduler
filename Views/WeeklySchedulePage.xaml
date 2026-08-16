@@ -108,19 +108,25 @@
                         <ItemsControl ItemsSource="{x:Bind Rows}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="local:DaySlotEditor">
-                                    <Border Padding="12" Margin="0,4,32,4" CornerRadius="8"
-                                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                            BorderThickness="1">
-                                        <Grid ColumnSpacing="16">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="180"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                            </Grid.ColumnDefinitions>
+                                    <Grid Margin="0,4,32,4">
+                                        <Border CornerRadius="8" BorderThickness="2"
+                                                BorderBrush="{ThemeResource SystemFillColorCriticalBrush}"
+                                                Background="{ThemeResource SystemFillColorCriticalBrush}"
+                                                Opacity="0.18"
+                                                Visibility="{x:Bind local:WeeklySchedulePage.ErrorVisibility(HasError, WallpaperMissing), Mode=OneWay}"/>
+                                        <Border Padding="12" CornerRadius="8"
+                                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                BorderThickness="1">
+                                            <Grid ColumnSpacing="16">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="180"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
 
                                             <StackPanel Grid.Column="0" Spacing="4">
                                                 <TextBlock Text="Start time" FontSize="11"
@@ -161,13 +167,15 @@
                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
                                                 <ComboBox ItemsSource="{x:Bind StyleOptions}" Width="110" Height="32"
                                                           SelectedItem="{x:Bind EffectiveStyle, Mode=OneWay}"
-                                                          SelectionChanged="OnSlotStyleChanged"/>
+                                                          SelectionChanged="OnSlotStyleChanged"
+                                                          DropDownClosed="OnSlotStyleDropDownClosed"/>
                                             </StackPanel>
 
                                             <Button Grid.Column="5" Content="Remove" Click="OnRemoveSlotClick" Tag="{Binding}"
                                                     VerticalAlignment="Center"/>
                                         </Grid>
-                                    </Border>
+                                        </Border>
+                                    </Grid>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>

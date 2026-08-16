@@ -70,7 +70,7 @@ namespace WallpaperScheduler.Models
         [JsonIgnore]
         public TimeSpan StartTimeSpan => TimeSpan.Parse(Start == "24:00" ? "23:59:59" : Start);
         [JsonIgnore]
-        public TimeSpan EndTimeSpan => End == "24:00" ? TimeSpan.FromDays(1) : TimeSpan.Parse(End);
+        public TimeSpan EndTimeSpan => (End == "24:00" || End == "00:00") ? TimeSpan.FromDays(1) : TimeSpan.Parse(End);
     }
 
     public class WeeklySchedule

@@ -1,4 +1,6 @@
 using System;
+using System.Linq;
+using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -11,12 +13,20 @@ using Windows.Foundation;
 
 namespace WallpaperScheduler.Views
 {
+    public class CursorGrid : Grid
+    {
+        public void SetCursor(InputCursor cursor)
+        {
+            ProtectedCursor = cursor;
+        }
+    }
+
     public sealed partial class CropSelector : UserControl
     {
         private const double MinNormWidth = 0.1;
 
         private readonly Rectangle _sel;
-        private readonly Ellipse[] _handles = new Ellipse[4];
+        private readonly CursorGrid[] _handles = new CursorGrid[4];
         private double _imageAspect = 16.0 / 9.0;
         private double _ratio = 1;          // normalized selection W:H (screenAspect / imageAspect)
         private double _contentW, _contentH; // image content area within the control (px)
@@ -42,7 +52,7 @@ namespace WallpaperScheduler.Views
             Overlay.Children.Add(_sel);
             for (int i = 0; i < 4; i++)
             {
-                _handles[i] = new Ellipse
+                var ellipse = new Ellipse
                 {
                     Width = 16,
                     Height = 16,
@@ -50,19 +60,33 @@ namespace WallpaperScheduler.Views
                     Stroke = new SolidColorBrush(Microsoft.UI.Colors.White),
                     StrokeThickness = 1.5
                 };
+                _handles[i] = new CursorGrid
+                {
+                    Width = 16,
+                    Height = 16
+                };
+                _handles[i].Children.Add(ellipse);
                 Overlay.Children.Add(_handles[i]);
             }
+
+            _handles[0].SetCursor(InputSystemCursor.Create(InputSystemCursorShape.SizeNorthwestSoutheast));
+            _handles[1].SetCursor(InputSystemCursor.Create(InputSystemCursorShape.SizeNortheastSouthwest));
+            _handles[2].SetCursor(InputSystemCursor.Create(InputSystemCursorShape.SizeNortheastSouthwest));
+            _handles[3].SetCursor(InputSystemCursor.Create(InputSystemCursorShape.SizeNorthwestSoutheast));
         }
 
-        public void Load(WallpaperItem item)
+        public void Load(WallpaperItem item, double maxBoxW, double maxBoxH)
         {
             Img.Source = new BitmapImage(new Uri(item.FullPath));
             using var src = new System.Drawing.Bitmap(item.FullPath);
             _imageAspect = (double)src.Width / src.Height;
 
-            // fixed width; height follows the wallpaper's ratio, clamped to min/max
-            Width = 680;
-            Height = Math.Clamp(Width / _imageAspect, 220, 520);
+            // responsive: fit the wallpaper's real ratio into the available box
+            double w = maxBoxW;
+            double h = w / _imageAspect;
+            if (h > maxBoxH) { h = maxBoxH; w = h * _imageAspect; }
+            Width = w;
+            Height = h;
             UpdateContentRect();
 
             _ratio = CropHelper.ScreenAspect / _imageAspect;
@@ -78,10 +102,10 @@ namespace WallpaperScheduler.Views
             else
             {
                 // largest screen-aspect rect, centered
-                double w, h;
-                if (_ratio >= 1) { w = 1; h = w / _ratio; if (h > 1) { h = 1; w = h * _ratio; } }
-                else { h = 1; w = h * _ratio; }
-                _selNorm = new Rect((1 - w) / 2, (1 - h) / 2, w, h);
+                double nw, nh;
+                if (_ratio >= 1) { nw = 1; nh = nw / _ratio; if (nh > 1) { nh = 1; nw = nh * _ratio; } }
+                else { nh = 1; nw = nh * _ratio; }
+                _selNorm = new Rect((1 - nw) / 2, (1 - nh) / 2, nw, nh);
             }
             ApplyVisual();
         }

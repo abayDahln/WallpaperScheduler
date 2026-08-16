@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -38,7 +39,7 @@ namespace WallpaperScheduler.Views
             _schedulerEngine = app.SchedulerEngine;
             foreach (var wp in _configService.Config.WallpaperLibrary) Wallpapers.Add(wp);
             DataContext = this;
-            DayList.SelectedIndex = 0;
+            DayList.SelectedIndex = ((int)DateTime.Now.DayOfWeek + 6) % 7;
             if (DayList.SelectedIndex >= 0)
             {
                 SelectedDayTitle.Text = Days[DayList.SelectedIndex].Name;
@@ -47,7 +48,10 @@ namespace WallpaperScheduler.Views
             RefreshDaySummary();
         }
 
-        private DayOfWeek SelectedDay => (DayOfWeek)DayList.SelectedIndex;
+        private DayOfWeek SelectedDay => Days[DayList.SelectedIndex].Day;
+
+        public static Visibility ErrorVisibility(bool hasError, bool missing)
+            => hasError || missing ? Visibility.Visible : Visibility.Collapsed;
 
         private List<TimeSlot> GetSlots(DayOfWeek day) => _configService.Config.WeeklySchedule.GetDaySlots(day);
 
@@ -75,7 +79,9 @@ namespace WallpaperScheduler.Views
             Rows.Clear();
             foreach (var s in GetSlots(SelectedDay))
             {
-                Rows.Add(new DaySlotEditor(s, Wallpapers));
+                var editor = new DaySlotEditor(s, Wallpapers);
+                editor.RefreshWallpaperState();
+                Rows.Add(editor);
             }
             EmptyState.Visibility = Rows.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         }
@@ -86,16 +92,34 @@ namespace WallpaperScheduler.Views
             foreach (var wp in imported) Wallpapers.Add(wp);
             if (imported.Count == 0) return;
 
-            foreach (var wp in imported)
+            var slots = GetSlots(SelectedDay);
+
+            // start after the last existing slot so new slots never overlap
+            TimeSpan nextStart = TimeSpan.Zero;
+            foreach (var s in slots)
+                if (s.EndTimeSpan > nextStart) nextStart = s.EndTimeSpan;
+
+            if (nextStart >= TimeSpan.FromDays(1))
             {
-            var slot = new TimeSlot
+                ShowMessage("This day is already fully scheduled. Remove a slot first.");
+                return;
+            }
+
+            TimeSpan free = TimeSpan.FromDays(1) - nextStart;
+            TimeSpan each = free / imported.Count;
+            for (int i = 0; i < imported.Count; i++)
             {
-                Start = "00:00",
-                End = "24:00",
-                WallpaperId = imported[0].Id,
-                WallpaperStyle = _configService.Config.Settings.WallpaperStyle
-            };
-                GetSlots(SelectedDay).Add(slot);
+                var wp = imported[i];
+                TimeSpan start = nextStart + each * i;
+                TimeSpan end = i == imported.Count - 1 ? TimeSpan.FromDays(1) : nextStart + each * (i + 1);
+                var slot = new TimeSlot
+                {
+                    Start = start.ToString(@"hh\:mm"),
+                    End = end == TimeSpan.FromDays(1) ? "24:00" : end.ToString(@"hh\:mm"),
+                    WallpaperId = wp.Id,
+                    WallpaperStyle = _configService.Config.Settings.WallpaperStyle
+                };
+                slots.Add(slot);
                 Rows.Add(new DaySlotEditor(slot, Wallpapers));
             }
             SaveConfig();
@@ -112,6 +136,7 @@ namespace WallpaperScheduler.Views
             if (imported.Count == 0) return;
 
             editor.WallpaperId = imported[0].Id;
+            editor.RefreshWallpaperState();
             SaveConfig();
             ReloadRows();
             RefreshDaySummary();
@@ -169,7 +194,7 @@ namespace WallpaperScheduler.Views
                 return;
             }
 
-            var targetDay = (DayOfWeek)CopyTargetDay.SelectedIndex;
+            var targetDay = Days[CopyTargetDay.SelectedIndex].Day;
             var sourceSlots = GetSlots(SelectedDay);
             var copies = sourceSlots.Select(s => new TimeSlot
             {
@@ -198,25 +223,86 @@ namespace WallpaperScheduler.Views
 
             flyout.TimePicked += (_, args) =>
             {
+                var oldStart = editor.StartTime;
+                var oldEnd = editor.EndTime;
                 if (isEnd) editor.EndTime = args.NewTime;
                 else editor.StartTime = args.NewTime;
-                btn.Content = DaySlotEditor.FormatTime(isEnd ? editor.EndTime : editor.StartTime);
+
+                var conflicts = FindConflicts(editor);
+                if (conflicts.Count > 0)
+                {
+                    // invalid input -> cancel the change and highlight the conflicting slot(s)
+                    editor.StartTime = oldStart;
+                    editor.EndTime = oldEnd;
+                    btn.Content = DaySlotEditor.FormatTime(isEnd ? editor.EndTime : editor.StartTime);
+                    foreach (var c in conflicts) c.HasError = true;
+                    ShowMessage(BuildConflictMessage(editor, conflicts));
+                    return;
+                }
+
+                editor.HasError = false;
                 if (ValidateAndSave()) { }
             };
             flyout.ShowAt(btn);
         }
 
-        private async void OnSlotStyleChanged(object sender, SelectionChangedEventArgs e)
+        private List<DaySlotEditor> FindConflicts(DaySlotEditor edited)
+        {
+            var conflicts = new List<DaySlotEditor>();
+            if (edited.EndTime <= edited.StartTime)
+            {
+                conflicts.Add(edited);
+                return conflicts;
+            }
+
+            foreach (var other in Rows)
+            {
+                if (ReferenceEquals(other, edited)) continue;
+                if (string.IsNullOrEmpty(other.WallpaperId)) continue;
+                bool a = edited.StartTime < other.EndTime;
+                bool b = other.StartTime < edited.EndTime;
+                if (a && b)
+                {
+                    if (!conflicts.Contains(edited)) conflicts.Add(edited);
+                    if (!conflicts.Contains(other)) conflicts.Add(other);
+                }
+            }
+            return conflicts;
+        }
+
+        private static string BuildConflictMessage(DaySlotEditor edited, List<DaySlotEditor> conflicts)
+        {
+            if (conflicts.Count == 1)
+                return $"Invalid time: end time must be later than start time ({DaySlotEditor.FormatTime(edited.StartTime)}\u2013{DaySlotEditor.FormatTime(edited.EndTime)}).";
+            var names = string.Join(", ", conflicts.Select(c =>
+                $"{DaySlotEditor.FormatTime(c.StartTime)}\u2013{DaySlotEditor.FormatTime(c.EndTime)}"));
+            return $"Time slots must not overlap: {names}. Set each slot to its own range (e.g. 08:00\u201312:00, then 12:00\u201317:00).";
+        }
+
+        private void ClearErrors()
+        {
+            foreach (var r in Rows) r.HasError = false;
+        }
+
+        private void OnSlotStyleChanged(object sender, SelectionChangedEventArgs e)
         {
             if (sender is ComboBox cb && cb.DataContext is DaySlotEditor editor
                 && cb.SelectedItem is string style && editor.WallpaperStyle != style)
             {
                 editor.WallpaperStyle = style;
-                if (string.Equals(style, "Custom", StringComparison.OrdinalIgnoreCase) && editor.Wallpaper is WallpaperItem wp)
-                {
-                    await CropHelper.EditCropAsync(XamlRoot, wp);
-                    _configService.SaveConfig();
-                }
+                if (ValidateAndSave()) { }
+            }
+        }
+
+        private async void OnSlotStyleDropDownClosed(object sender, object e)
+        {
+            if (sender is ComboBox cb && cb.DataContext is DaySlotEditor editor
+                && cb.SelectedItem is string style
+                && string.Equals(style, "Custom", StringComparison.OrdinalIgnoreCase)
+                && editor.Wallpaper is WallpaperItem wp)
+            {
+                await CropHelper.EditCropAsync(XamlRoot, wp);
+                _configService.SaveConfig();
                 if (ValidateAndSave()) { }
             }
         }
@@ -282,7 +368,7 @@ namespace WallpaperScheduler.Views
         {
             for (int i = 0; i < Days.Count; i++)
             {
-                Days[i].Refresh(GetSlots((DayOfWeek)i));
+                Days[i].Refresh(GetSlots(Days[i].Day));
             }
         }
     }
@@ -322,10 +408,26 @@ namespace WallpaperScheduler.Views
         }
     }
 
-    public class DaySlotEditor
+    public class DaySlotEditor : System.ComponentModel.INotifyPropertyChanged
     {
+        public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
+
         private readonly TimeSlot _slot;
         public ObservableCollection<WallpaperItem> Wallpapers { get; }
+
+        private bool _hasError;
+        public bool HasError
+        {
+            get => _hasError;
+            set { if (_hasError != value) { _hasError = value; Raise(nameof(HasError)); } }
+        }
+
+        private bool _wallpaperMissing;
+        public bool WallpaperMissing
+        {
+            get => _wallpaperMissing;
+            set { if (_wallpaperMissing != value) { _wallpaperMissing = value; Raise(nameof(WallpaperMissing)); } }
+        }
 
         public string WallpaperId
         {
@@ -337,7 +439,20 @@ namespace WallpaperScheduler.Views
 
         public Microsoft.UI.Xaml.Media.ImageSource? Thumbnail => Wallpaper?.Thumbnail;
 
-        public string WallpaperLabel => Wallpaper?.Label ?? "Pick wallpaper…";
+        public bool IsWallpaperFileMissing => Wallpaper == null || !File.Exists(Wallpaper.FullPath);
+
+        public string WallpaperLabel => WallpaperMissing
+            ? "Missing wallpaper"
+            : (Wallpaper?.Label ?? "Pick wallpaper…");
+
+        public void RefreshWallpaperState()
+        {
+            WallpaperMissing = IsWallpaperFileMissing;
+            Raise(nameof(WallpaperLabel));
+            Raise(nameof(Thumbnail));
+        }
+
+        private void Raise(string name) => PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(name));
 
         public IReadOnlyList<string> StyleOptions { get; } = new List<string> { "Fill", "Fit", "Stretch", "Tile", "Center", "Span", "Custom" };
 
@@ -367,7 +482,7 @@ namespace WallpaperScheduler.Views
         public TimeSpan EndTime
         {
             get => _slot.EndTimeSpan;
-            set { _slot.End = value == TimeSpan.FromDays(1) ? "24:00" : value.ToString(@"hh\:mm"); }
+            set { _slot.End = value == TimeSpan.FromDays(1) || value == TimeSpan.Zero ? "24:00" : value.ToString(@"hh\:mm"); }
         }
 
         public DaySlotEditor(TimeSlot slot, ObservableCollection<WallpaperItem> wallpapers)
@@ -379,7 +494,7 @@ namespace WallpaperScheduler.Views
         public TimeSlot ToTimeSlot()
         {
             _slot.Start = StartTime.ToString(@"hh\:mm");
-            _slot.End = EndTime == TimeSpan.FromDays(1) ? "24:00" : EndTime.ToString(@"hh\:mm");
+            _slot.End = EndTime == TimeSpan.FromDays(1) || EndTime == TimeSpan.Zero ? "24:00" : EndTime.ToString(@"hh\:mm");
             _slot.WallpaperId = WallpaperId;
             return _slot;
         }
